@@ -6,6 +6,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { getInitials } from '@/lib/utils';
+import { useEasterEggs, CopperRushOverlay, MapleRushOverlay, PanicOverlay, LanternOverlay, EggToast, HiddenMineral } from '@/components/easter-eggs';
 
 const NAV_ITEMS = [
   { href: '/dashboard',          label: 'Hub',        icon: '⬡' },
@@ -19,6 +20,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [signingOut, setSigningOut] = useState(false);
   const user = session?.user as any;
+  const {
+    copperRush, stopCopperRush,
+    mapleRush, stopMapleRush,
+    quakeMode,
+    panicMode, stopPanicMode, triggerPanic,
+    lanternMode,
+    toast, clearToast,
+    onTitleClick, onUptimeClick,
+    onMineralFound
+  } = useEasterEggs();
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -29,12 +40,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col">
+      {lanternMode && <LanternOverlay />}
+      {copperRush && <CopperRushOverlay onDone={stopCopperRush} />}
+      {mapleRush && <MapleRushOverlay onDone={stopMapleRush} />}
+      {panicMode && <PanicOverlay onDone={stopPanicMode} />}
+      {toast && <EggToast message={toast.msg} icon={toast.icon} onDone={clearToast} />}
+      <HiddenMineral onFound={onMineralFound} />
+
       {/* ── Top Header ── */}
       <header className="z-50 border-b border-[#27272a]/60 bg-[#000]/80 backdrop-blur-xl sticky top-0">
         <div className="flex items-center justify-between px-6 h-16">
           {/* Logo + Title */}
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-3 group">
+            <Link href="/dashboard" className="flex items-center gap-3 group" onClick={onTitleClick}>
               <Image
                 src="/logo.webp"
                 alt="Copper Giant"
@@ -79,7 +97,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {/* Right: status + user */}
           <div className="flex items-center gap-3">
             {/* Live indicator */}
-            <div className="hidden sm:flex items-center gap-1.5 bg-emerald-950/30 border border-emerald-900/30 px-3 py-1 rounded-full">
+            <div className="hidden sm:flex items-center gap-1.5 bg-emerald-950/30 border border-emerald-900/30 px-3 py-1 rounded-full cursor-pointer hover:bg-emerald-950/50 transition-colors" onClick={onUptimeClick}>
               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
               <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-400">Live</span>
             </div>
@@ -147,7 +165,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-[#27272a]/30 px-6 py-2.5 flex items-center justify-between">
+      <footer className="border-t border-[#27272a]/30 px-6 py-2.5 flex items-center justify-between relative">
+        <div
+          onClick={triggerPanic}
+          className="absolute bottom-0 right-0 w-2 h-2 opacity-0 hover:opacity-100 cursor-pointer"
+          title="Shut down"
+        />
         <span className="text-[9px] text-[#3f3f46] uppercase tracking-widest">
           Copper Giant Resources Corp · The Giant Forge v1.0
         </span>
