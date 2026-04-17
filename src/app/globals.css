@@ -1,26 +1,315 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* === Copper Monitor Color System === */
+    --background: #000000;
+    --foreground: #ffffff;
+    --card: #0a0a0a;
+    --card-foreground: #ffffff;
+    --popover: #0d0d0d;
+    --popover-foreground: #ffffff;
+
+    /* Primary: Copper Giant Red */
+    --primary: #f91117;
+    --primary-foreground: #ffffff;
+    --primary-glow: rgba(249, 17, 23, 0.15);
+
+    /* Secondary: Deep charcoal */
+    --secondary: #1a1a1a;
+    --secondary-foreground: #ffffff;
+
+    /* Muted */
+    --muted: #141414;
+    --muted-foreground: #a1a1aa;
+
+    /* Accent: Copper bronze */
+    --accent: #1a1a1a;
+    --accent-foreground: #d4772c;
+    --copper: #d4772c;
+    --copper-light: #e8945a;
+    --copper-dark: #b87333;
+
+    /* Destructive */
+    --destructive: #7f1d1d;
+
+    /* Borders */
+    --border: #27272a;
+    --border-hover: #3f3f46;
+    --input: #1a1a1a;
+    --ring: #f91117;
+
+    /* Chart colors */
+    --chart-1: #d4772c;
+    --chart-2: #b87333;
+    --chart-3: #f91117;
+    --chart-4: #eab308;
+    --chart-5: #10b981;
+
+    /* Status */
+    --success: #10b981;
+    --warning: #eab308;
+
+    --radius: 0.625rem;
+  }
+
+  * {
+    border-color: var(--border);
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--background);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-hover);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--copper-dark);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  /* No-scrollbar */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Glass card */
+  .glass {
+    background: rgba(10, 10, 10, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+  }
+
+  /* Glow effects */
+  .glow-red {
+    box-shadow: 0 0 20px rgba(249, 17, 23, 0.2),
+                0 0 40px rgba(249, 17, 23, 0.05);
+  }
+  .glow-copper {
+    box-shadow: 0 0 20px rgba(212, 119, 44, 0.2),
+                0 0 40px rgba(212, 119, 44, 0.05);
+  }
+  .glow-text-red {
+    text-shadow: 0 0 20px rgba(249, 17, 23, 0.5);
+  }
+
+  /* Tool card hover */
+  .tool-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+  .tool-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary),
+                0 0 30px rgba(249, 17, 23, 0.15),
+                0 20px 40px rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px);
+  }
+
+  /* Gradient text */
+  .text-gradient-copper {
+    background: linear-gradient(135deg, #d4772c, #e8945a, #b87333);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-red {
+    background: linear-gradient(135deg, #f91117, #ff4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Subtle grid background */
+  .bg-grid {
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  /* Animated pulse dot */
+  .pulse-dot::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: pulse-green 2s infinite;
+  }
+  @keyframes pulse-green {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+    50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+  }
+
+  /* Fade in animations */
+  .animate-fade-up {
+    animation: fade-up 0.6s ease forwards;
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.4s ease forwards;
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Shimmer loading */
+  .shimmer {
+    background: linear-gradient(90deg, 
+      var(--card) 25%, 
+      var(--secondary) 50%, 
+      var(--card) 75%
+    );
+    background-size: 400% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+  }
+}
+
+/* ── react-grid-layout overrides ─────────────────────────── */
+.react-grid-item {
+  transition: none !important; /* snappy repositioning */
+}
+.react-grid-item.react-grid-placeholder {
+  background: rgba(249, 17, 23, 0.08) !important;
+  border: 1px dashed rgba(249, 17, 23, 0.3) !important;
+  border-radius: 16px !important;
+  opacity: 1 !important;
+}
+.react-grid-item.react-draggable-dragging {
+  opacity: 0.85;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8) !important;
+  z-index: 100;
+}
+/* Custom resize handle — elegant copper corner */
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 14px;
+  height: 14px;
+  cursor: se-resize;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 20;
+}
+.react-grid-item:hover > .react-resizable-handle {
+  opacity: 1;
+}
+.react-grid-item > .react-resizable-handle::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #d4772c;
+  border-bottom: 2px solid #d4772c;
+  border-radius: 0 0 4px 0;
+  opacity: 0.7;
+}
+.react-grid-item:hover > .react-resizable-handle::after {
+  opacity: 1;
+  border-color: #f91117;
+}
+
+/* ── pulse-status animation ──────────────────────────────── */
+@keyframes pulse-status {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.8); }
+}
+
+/* ── No-scrollbar utility ────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Shimmer utility ─────────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(90deg, #111 25%, #1a1a1a 50%, #111 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ── animate-fade-up ─────────────────────────────────────── */
+.animate-fade-up {
+  animation: fade-up 0.6s ease both;
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   EASTER EGG ANIMATIONS — Cu · Mocoa 🇨🇴 · Canadá 🇨🇦
+   ══════════════════════════════════════════════════════════════ */
+
+/* Copper Rush — background vignette pulse */
+@keyframes copper-rush-vignette {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Individual Cu particles — float up and fade */
+@keyframes copper-particle {
+  0%   { opacity: 0; transform: translateY(0)   scale(0.6); }
+  20%  { opacity: 1; transform: translateY(-8px) scale(1); }
+  80%  { opacity: 0.6; transform: translateY(-28px) scale(1.05); }
+  100% { opacity: 0; transform: translateY(-50px) scale(0.8); }
+}
+
+/* Centre banner — fade scale in then out */
+@keyframes copper-banner {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+  18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.02); }
+  30%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  75%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+}
+
+/* Toast — slide in from right with spring */
+@keyframes egg-toast-in {
+  from { opacity: 0; transform: translateX(24px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0)    scale(1); }
 }
