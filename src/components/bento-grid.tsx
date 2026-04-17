@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Session } from 'next-auth';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
-import { ReactGridLayout, useContainerWidth } from 'react-grid-layout';
+import { ReactGridLayout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { getInitials } from '@/lib/utils';
@@ -663,7 +663,7 @@ export function BentoGrid({ session }: { session: Session }) {
   const [mounted, setMounted] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { width: containerWidth } = useContainerWidth({ ref: containerRef });
+    const containerWidth = 1200;
 
   useEffect(() => {
     setMounted(true);
