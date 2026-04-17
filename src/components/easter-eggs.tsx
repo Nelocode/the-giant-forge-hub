@@ -190,7 +190,7 @@ export function useEasterEggs() {
   const [toast, setToast]             = useState<{ msg: string; icon?: string } | null>(null);
   const konamiRef                     = useRef<string[]>([]);
   const titleClicksRef                = useRef(0);
-  const titleTimerRef                 = useRef<ReturnType<typeof setTimeout>>();
+  const titleTimerRef                 = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const tintoFiredRef                 = useRef(false);
 
   /* ── Console easter egg — fires once on mount ── */
