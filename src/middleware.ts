@@ -22,6 +22,7 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET ?? 'forge-secret-dev-change-in-prod',
+    secureCookie: process.env.NODE_ENV === 'production',
   });
 
   if (!token) {
