@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getInitials } from '@/lib/utils';
+import { useState, useEffect } from "react";
+import { getInitials } from "@/lib/utils";
 
 interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'user';
+  role: "admin" | "user";
   avatar: string | null;
   active: number;
   created_at: string;
@@ -17,21 +17,21 @@ interface CreateUserForm {
   name: string;
   email: string;
   password: string;
-  role: 'admin' | 'user';
+  role: "admin" | "user";
 }
 
 export function AdminPanel() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState<CreateUserForm>({ name: '', email: '', password: '', role: 'user' });
+  const [form, setForm] = useState<CreateUserForm>({ name: "", email: "", password: "", role: "user" });
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [resetPw, setResetPw] = useState<Record<number, { open: boolean; value: string; saving: boolean; err: string }>>({});
 
   async function loadUsers() {
-    const res = await fetch('/api/users');
+    const res = await fetch("/api/users");
     const data = await res.json();
     setUsers(data.users ?? []);
     setLoading(false);
@@ -42,17 +42,17 @@ export function AdminPanel() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setCreating(true);
-    setError('');
+    setError("");
     try {
-      const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Error creando usuario');
-      setSuccess('Usuario creado exitosamente.');
-      setForm({ name: '', email: '', password: '', role: 'user' });
+      if (!res.ok) throw new Error(data.error ?? "Error creando usuario");
+      setSuccess("Usuario creado exitosamente.");
+      setForm({ name: "", email: "", password: "", role: "user" });
       setShowCreate(false);
       await loadUsers();
     } catch (e: any) {
@@ -63,19 +63,19 @@ export function AdminPanel() {
   }
 
   async function toggleRole(user: User) {
-    const newRole = user.role === 'admin' ? 'user' : 'admin';
-    await fetch('/api/users', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+    const newRole = user.role === "admin" ? "user" : "admin";
+    await fetch("/api/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: user.id, role: newRole }),
     });
     await loadUsers();
   }
 
   async function toggleActive(user: User) {
-    await fetch('/api/users', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+    await fetch("/api/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: user.id, active: user.active ? 0 : 1 }),
     });
     await loadUsers();
@@ -83,12 +83,12 @@ export function AdminPanel() {
 
   async function deleteUser(user: User) {
     if (!confirm(`¿Eliminar a ${user.name}? Esta acción no se puede deshacer.`)) return;
-    await fetch(`/api/users?id=${user.id}`, { method: 'DELETE' });
+    await fetch(`/api/users?id=${user.id}`, { method: "DELETE" });
     await loadUsers();
   }
 
   function openReset(userId: number) {
-    setResetPw(p => ({ ...p, [userId]: { open: true, value: '', saving: false, err: '' } }));
+    setResetPw(p => ({ ...p, [userId]: { open: true, value: "", saving: false, err: "" } }));
   }
   function closeReset(userId: number) {
     setResetPw(p => ({ ...p, [userId]: { ...p[userId], open: false } }));
@@ -96,17 +96,17 @@ export function AdminPanel() {
   async function handleResetPw(userId: number) {
     const state = resetPw[userId];
     if (!state?.value) return;
-    setResetPw(p => ({ ...p, [userId]: { ...p[userId], saving: true, err: '' } }));
+    setResetPw(p => ({ ...p, [userId]: { ...p[userId], saving: true, err: "" } }));
     try {
-      const res = await fetch('/api/users', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: userId, newPassword: state.value }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Error al cambiar contraseña');
-      setSuccess('Contraseña actualizada correctamente.');
-      setResetPw(p => ({ ...p, [userId]: { open: false, value: '', saving: false, err: '' } }));
+      if (!res.ok) throw new Error(data.error ?? "Error al cambiar contraseña");
+      setSuccess("Contraseña actualizada correctamente.");
+      setResetPw(p => ({ ...p, [userId]: { open: false, value: "", saving: false, err: "" } }));
     } catch (e: any) {
       setResetPw(p => ({ ...p, [userId]: { ...p[userId], saving: false, err: e.message } }));
     }
@@ -118,13 +118,13 @@ export function AdminPanel() {
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#f91117] mb-1">Panel de Control</p>
           <h1 className="text-2xl font-extrabold text-white">Gestión de Usuarios</h1>
-          <p className="text-sm text-[#a1a1aa] mt-1">{users.length} usuario{users.length !== 1 ? 's' : ''} registrados</p>
+          <p className="text-sm text-[#a1a1aa] mt-1">{users.length} usuario{users.length !== 1 ? "s" : ""} registrados</p>
         </div>
         <button
           id="create-user-btn"
-          onClick={() => { setShowCreate(!showCreate); setError(''''); setSuccess(''''); }}
+          onClick={() => { setShowCreate(!showCreate); setError(""); setSuccess(""); }}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#f91117] hover:bg-[#d70f14] text-white text-sm font-bold transition-all"
-          style={{ boxShadow: ''0 0 16px rgba(249,17,23,0.3)'' }}
+          style={{ boxShadow: "0 0 16px rgba(249,17,23,0.3)" }}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -144,9 +144,165 @@ export function AdminPanel() {
           <h2 className="text-sm font-bold text-white mb-4">Crear Nuevo Usuario</h2>
           <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { id: ''new-name'', label: ''Nombre'', key: ''name'', type: ''text'', placeholder: ''Nombre completo'' },
-              { id: ''new-email'', label: ''Email'', key: ''email'', type: ''email'', placeholder: ''correo@empresa.com'' },
-              { id: ''new-password'', label: ''Contraseña'', key: ''password'', type: ''password'', placeholder: ''Min. 8 caracteres'' },
+              { id: "new-name", label: "Nombre", key: "name", type: "text", placeholder: "Nombre completo" },
+              { id: "new-email", label: "Email", key: "email", type: "email", placeholder: "correo@empresa.com" },
+              { id: "new-password", label: "Contraseña", key: "password", type: "password", placeholder: "Min. 8 caracteres" },
+            ].map(field => (
+              <div key={field.key}>
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-[#a1a1aa] mb-2">{field.label}</label>
+                <input
+                  id={field.id}
+                  type={field.type}
+                  placeholder={field.placeholder}
+                  value={(form as any)[field.key]}
+
+import { useState, useEffect } from "react";
+import { getInitials } from "@/lib/utils";
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: "admin" | "user";
+  avatar: string | null;
+  active: number;
+  created_at: string;
+}
+
+interface CreateUserForm {
+  name: string;
+  email: string;
+  password: string;
+  role: "admin" | "user";
+}
+
+export function AdminPanel() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState<CreateUserForm>({ name: "", email: "", password: "", role: "user" });
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [resetPw, setResetPw] = useState<Record<number, { open: boolean; value: string; saving: boolean; err: string }>>({});
+
+  async function loadUsers() {
+    const res = await fetch("/api/users");
+    const data = await res.json();
+    setUsers(data.users ?? []);
+    setLoading(false);
+  }
+
+  useEffect(() => { loadUsers(); }, []);
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+    setError("");
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Error creando usuario");
+      setSuccess("Usuario creado exitosamente.");
+      setForm({ name: "", email: "", password: "", role: "user" });
+      setShowCreate(false);
+      await loadUsers();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function toggleRole(user: User) {
+    const newRole = user.role === "admin" ? "user" : "admin";
+    await fetch("/api/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: user.id, role: newRole }),
+    });
+    await loadUsers();
+  }
+
+  async function toggleActive(user: User) {
+    await fetch("/api/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: user.id, active: user.active ? 0 : 1 }),
+    });
+    await loadUsers();
+  }
+
+  async function deleteUser(user: User) {
+    if (!confirm(`¿Eliminar a ${user.name}? Esta acción no se puede deshacer.`)) return;
+    await fetch(`/api/users?id=${user.id}`, { method: "DELETE" });
+    await loadUsers();
+  }
+
+  function openReset(userId: number) {
+    setResetPw(p => ({ ...p, [userId]: { open: true, value: "", saving: false, err: "" } }));
+  }
+  function closeReset(userId: number) {
+    setResetPw(p => ({ ...p, [userId]: { ...p[userId], open: false } }));
+  }
+  async function handleResetPw(userId: number) {
+    const state = resetPw[userId];
+    if (!state?.value) return;
+    setResetPw(p => ({ ...p, [userId]: { ...p[userId], saving: true, err: "" } }));
+    try {
+      const res = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: userId, newPassword: state.value }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Error al cambiar contraseña");
+      setSuccess("Contraseña actualizada correctamente.");
+      setResetPw(p => ({ ...p, [userId]: { open: false, value: "", saving: false, err: "" } }));
+    } catch (e: any) {
+      setResetPw(p => ({ ...p, [userId]: { ...p[userId], saving: false, err: e.message } }));
+    }
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="flex items-start justify-between mb-8 animate-fade-up">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#f91117] mb-1">Panel de Control</p>
+          <h1 className="text-2xl font-extrabold text-white">Gestión de Usuarios</h1>
+          <p className="text-sm text-[#a1a1aa] mt-1">{users.length} usuario{users.length !== 1 ? "s" : ""} registrados</p>
+        </div>
+        <button
+          id="create-user-btn"
+          onClick={() => { setShowCreate(!showCreate); setError(""); setSuccess(""); }}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#f91117] hover:bg-[#d70f14] text-white text-sm font-bold transition-all"
+          style={{ boxShadow: "0 0 16px rgba(249,17,23,0.3)" }}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+          Nuevo Usuario
+        </button>
+      </div>
+
+      {success && (
+        <div className="mb-4 p-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-sm text-emerald-400 animate-fade-in">
+          {success}
+        </div>
+      )}
+
+      {showCreate && (
+        <div className="glass rounded-2xl p-6 mb-6 border border-[#f91117]/20 animate-fade-up">
+          <h2 className="text-sm font-bold text-white mb-4">Crear Nuevo Usuario</h2>
+          <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              { id: "new-name", label: "Nombre", key: "name", type: "text", placeholder: "Nombre completo" },
+              { id: "new-email", label: "Email", key: "email", type: "email", placeholder: "correo@empresa.com" },
+              { id: "new-password", label: "Contraseña", key: "password", type: "password", placeholder: "Min. 8 caracteres" },
             ].map(field => (
               <div key={field.key}>
                 <label className="block text-[11px] font-semibold uppercase tracking-widest text-[#a1a1aa] mb-2">{field.label}</label>
@@ -166,7 +322,7 @@ export function AdminPanel() {
               <select
                 id="new-role"
                 value={form.role}
-                onChange={e => setForm(f => ({ ...f, role: e.target.value as ''admin'' | ''user'' }))}
+                onChange={e => setForm(f => ({ ...f, role: e.target.value as "admin" | "user" }))}
                 className="w-full px-4 py-3 rounded-xl bg-[#0d0d0d] border border-[#27272a] text-white text-sm focus:outline-none focus:border-[#f91117] transition-all"
               >
                 <option value="user">◎ Usuario</option>
@@ -182,7 +338,7 @@ export function AdminPanel() {
                 disabled={creating}
                 className="px-6 py-2.5 rounded-xl bg-[#f91117] hover:bg-[#d70f14] text-white text-sm font-bold transition-all disabled:opacity-50"
               >
-                {creating ? ''Creando...'' : ''Crear Usuario''}
+                {creating ? "Creando..." : "Crear Usuario"}
               </button>
               <button
                 type="button"
@@ -196,7 +352,7 @@ export function AdminPanel() {
         </div>
       )}
 
-      <div className="glass rounded-2xl overflow-hidden animate-fade-up" style={{ animationDelay: ''100ms'' }}>
+      <div className="glass rounded-2xl overflow-hidden animate-fade-up" style={{ animationDelay: "100ms" }}>
         {loading ? (
           <div className="p-8 space-y-3">
             {[1,2,3].map(i => <div key={i} className="h-16 shimmer rounded-xl" />)}
@@ -205,7 +361,7 @@ export function AdminPanel() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#27272a]">
-                {[''Usuario'', ''Email'', ''Rol'', ''Estado'', ''Acciones''].map(h => (
+                {["Usuario", "Email", "Rol", "Estado", "Acciones"].map(h => (
                   <th key={h} className="px-5 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest text-[#52525b]">{h}</th>
                 ))}
               </tr>
@@ -233,13 +389,13 @@ export function AdminPanel() {
                       onClick={() => toggleRole(user)}
                       className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full transition-all hover:opacity-80"
                       style={{
-                        background: user.role === ''admin'' ? ''rgba(212,119,44,0.15)'' : ''rgba(249,17,23,0.1)'',
-                        color: user.role === ''admin'' ? ''#d4772c'' : ''#f91117'',
-                        border: `1px solid ${user.role === 'admin' ? 'rgba(212,119,44,0.3)' : 'rgba(249,17,23,0.2)'}`,
+                        background: user.role === "admin" ? "rgba(212,119,44,0.15)" : "rgba(249,17,23,0.1)",
+                        color: user.role === "admin" ? "#d4772c" : "#f91117",
+                        border: "1px solid " + (user.role === "admin" ? "rgba(212,119,44,0.3)" : "rgba(249,17,23,0.2)"),
                       }}
                       title="Click para cambiar rol"
                     >
-                      {user.role === ''admin'' ? ''⚙ Admin'' : ''◎ User''}
+                      {user.role === "admin" ? "⚙ Admin" : "◎ User"}
                     </button>
                   </td>
                   <td className="px-5 py-4">
@@ -247,12 +403,12 @@ export function AdminPanel() {
                       onClick={() => toggleActive(user)}
                       className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full transition-all"
                       style={{
-                        background: user.active ? ''rgba(16,185,129,0.1)'' : ''rgba(100,100,100,0.1)'',
-                        color: user.active ? ''#10b981'' : ''#52525b'',
-                        border: `1px solid ${user.active ? 'rgba(16,185,129,0.2)' : 'rgba(100,100,100,0.2)'}`,
+                        background: user.active ? "rgba(16,185,129,0.1)" : "rgba(100,100,100,0.1)",
+                        color: user.active ? "#10b981" : "#52525b",
+                        border: "1px solid " + (user.active ? "rgba(16,185,129,0.2)" : "rgba(100,100,100,0.2)"),
                       }}
                     >
-                      {user.active ? ''● Activo'' : ''○ Inactivo''}
+                      {user.active ? "● Activo" : "○ Inactivo"}
                     </button>
                   </td>
                   <td className="px-5 py-4">
@@ -288,17 +444,17 @@ export function AdminPanel() {
                         <input
                           type="password"
                           placeholder="Mín. 6 caracteres"
-                          value={resetPw[user.id]?.value ?? ''''}
+                          value={resetPw[user.id]?.value ?? ""}
                           onChange={e => setResetPw(p => ({ ...p, [user.id]: { ...p[user.id], value: e.target.value } }))}
                           className="px-3 py-1.5 rounded-lg bg-[#141414] border border-[#27272a] text-white text-sm focus:outline-none focus:border-[#d4772c] transition-all w-48"
-                          onKeyDown={e => e.key === ''Enter'' && handleResetPw(user.id)}
+                          onKeyDown={e => e.key === "Enter" && handleResetPw(user.id)}
                         />
                         <button
                           onClick={() => handleResetPw(user.id)}
                           disabled={resetPw[user.id]?.saving}
                           className="px-4 py-1.5 rounded-lg bg-[#d4772c] hover:bg-[#c0671e] text-white text-xs font-bold transition-all disabled:opacity-50"
                         >
-                          {resetPw[user.id]?.saving ? ''Guardando...'' : ''Guardar''}
+                          {resetPw[user.id]?.saving ? "Guardando..." : "Guardar"}
                         </button>
                         <button
                           onClick={() => closeReset(user.id)}
