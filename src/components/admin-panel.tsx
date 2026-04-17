@@ -114,7 +114,6 @@ export function AdminPanel() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Header */}
       <div className="flex items-start justify-between mb-8 animate-fade-up">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#f91117] mb-1">Panel de Control</p>
@@ -123,9 +122,9 @@ export function AdminPanel() {
         </div>
         <button
           id="create-user-btn"
-          onClick={() => { setShowCreate(!showCreate); setError(''); setSuccess(''); }}
+          onClick={() => { setShowCreate(!showCreate); setError(''''); setSuccess(''''); }}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#f91117] hover:bg-[#d70f14] text-white text-sm font-bold transition-all"
-          style={{ boxShadow: '0 0 16px rgba(249,17,23,0.3)' }}
+          style={{ boxShadow: ''0 0 16px rgba(249,17,23,0.3)'' }}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -134,22 +133,20 @@ export function AdminPanel() {
         </button>
       </div>
 
-      {/* Success / Error global */}
       {success && (
         <div className="mb-4 p-3 rounded-xl bg-emerald-950/30 border border-emerald-900/30 text-sm text-emerald-400 animate-fade-in">
           {success}
         </div>
       )}
 
-      {/* Create user form */}
       {showCreate && (
         <div className="glass rounded-2xl p-6 mb-6 border border-[#f91117]/20 animate-fade-up">
           <h2 className="text-sm font-bold text-white mb-4">Crear Nuevo Usuario</h2>
           <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { id: 'new-name', label: 'Nombre', key: 'name', type: 'text', placeholder: 'Nombre completo' },
-              { id: 'new-email', label: 'Email', key: 'email', type: 'email', placeholder: 'correo@empresa.com' },
-              { id: 'new-password', label: 'Contraseña', key: 'password', type: 'password', placeholder: 'Min. 8 caracteres' },
+              { id: ''new-name'', label: ''Nombre'', key: ''name'', type: ''text'', placeholder: ''Nombre completo'' },
+              { id: ''new-email'', label: ''Email'', key: ''email'', type: ''email'', placeholder: ''correo@empresa.com'' },
+              { id: ''new-password'', label: ''Contraseña'', key: ''password'', type: ''password'', placeholder: ''Min. 8 caracteres'' },
             ].map(field => (
               <div key={field.key}>
                 <label className="block text-[11px] font-semibold uppercase tracking-widest text-[#a1a1aa] mb-2">{field.label}</label>
@@ -157,7 +154,7 @@ export function AdminPanel() {
                   id={field.id}
                   type={field.type}
                   placeholder={field.placeholder}
-                  value={form[field.key as keyof typeof form]}
+                  value={(form as any)[field.key]}
                   onChange={e => setForm(f => ({ ...f, [field.key]: e.target.value }))}
                   required
                   className="w-full px-4 py-3 rounded-xl bg-[#0d0d0d] border border-[#27272a] text-white text-sm focus:outline-none focus:border-[#f91117] focus:ring-1 focus:ring-[#f91117]/20 transition-all"
@@ -169,7 +166,7 @@ export function AdminPanel() {
               <select
                 id="new-role"
                 value={form.role}
-                onChange={e => setForm(f => ({ ...f, role: e.target.value as 'admin' | 'user' }))}
+                onChange={e => setForm(f => ({ ...f, role: e.target.value as ''admin'' | ''user'' }))}
                 className="w-full px-4 py-3 rounded-xl bg-[#0d0d0d] border border-[#27272a] text-white text-sm focus:outline-none focus:border-[#f91117] transition-all"
               >
                 <option value="user">◎ Usuario</option>
@@ -185,7 +182,7 @@ export function AdminPanel() {
                 disabled={creating}
                 className="px-6 py-2.5 rounded-xl bg-[#f91117] hover:bg-[#d70f14] text-white text-sm font-bold transition-all disabled:opacity-50"
               >
-                {creating ? 'Creando...' : 'Crear Usuario'}
+                {creating ? ''Creando...'' : ''Crear Usuario''}
               </button>
               <button
                 type="button"
@@ -199,8 +196,7 @@ export function AdminPanel() {
         </div>
       )}
 
-      {/* Users table */}
-      <div className="glass rounded-2xl overflow-hidden animate-fade-up" style={{ animationDelay: '100ms' }}>
+      <div className="glass rounded-2xl overflow-hidden animate-fade-up" style={{ animationDelay: ''100ms'' }}>
         {loading ? (
           <div className="p-8 space-y-3">
             {[1,2,3].map(i => <div key={i} className="h-16 shimmer rounded-xl" />)}
@@ -209,7 +205,7 @@ export function AdminPanel() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#27272a]">
-                {['Usuario', 'Email', 'Rol', 'Estado', 'Acciones'].map(h => (
+                {[''Usuario'', ''Email'', ''Rol'', ''Estado'', ''Acciones''].map(h => (
                   <th key={h} className="px-5 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest text-[#52525b]">{h}</th>
                 ))}
               </tr>
@@ -237,13 +233,13 @@ export function AdminPanel() {
                       onClick={() => toggleRole(user)}
                       className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full transition-all hover:opacity-80"
                       style={{
-                        background: user.role === 'admin' ? 'rgba(212,119,44,0.15)' : 'rgba(249,17,23,0.1)',
-                        color: user.role === 'admin' ? '#d4772c' : '#f91117',
+                        background: user.role === ''admin'' ? ''rgba(212,119,44,0.15)'' : ''rgba(249,17,23,0.1)'',
+                        color: user.role === ''admin'' ? ''#d4772c'' : ''#f91117'',
                         border: `1px solid ${user.role === 'admin' ? 'rgba(212,119,44,0.3)' : 'rgba(249,17,23,0.2)'}`,
                       }}
                       title="Click para cambiar rol"
                     >
-                      {user.role === 'admin' ? '⚙ Admin' : '◎ User'}
+                      {user.role === ''admin'' ? ''⚙ Admin'' : ''◎ User''}
                     </button>
                   </td>
                   <td className="px-5 py-4">
@@ -251,17 +247,16 @@ export function AdminPanel() {
                       onClick={() => toggleActive(user)}
                       className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full transition-all"
                       style={{
-                        background: user.active ? 'rgba(16,185,129,0.1)' : 'rgba(100,100,100,0.1)',
-                        color: user.active ? '#10b981' : '#52525b',
+                        background: user.active ? ''rgba(16,185,129,0.1)'' : ''rgba(100,100,100,0.1)'',
+                        color: user.active ? ''#10b981'' : ''#52525b'',
                         border: `1px solid ${user.active ? 'rgba(16,185,129,0.2)' : 'rgba(100,100,100,0.2)'}`,
                       }}
                     >
-                      {user.active ? '● Activo' : '○ Inactivo'}
+                      {user.active ? ''● Activo'' : ''○ Inactivo''}
                     </button>
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1">
-                      {/* Change password */}
                       <button
                         onClick={() => resetPw[user.id]?.open ? closeReset(user.id) : openReset(user.id)}
                         className="p-1.5 rounded-lg text-[#52525b] hover:text-[#d4772c] hover:bg-[#d4772c]/10 transition-all"
@@ -271,7 +266,6 @@ export function AdminPanel() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                         </svg>
                       </button>
-                      {/* Delete */}
                       <button
                         onClick={() => deleteUser(user)}
                         className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[#52525b] hover:text-[#f91117] hover:bg-[#f91117]/10 transition-all"
@@ -284,7 +278,6 @@ export function AdminPanel() {
                     </div>
                   </td>
                 </tr>
-                {/* Inline password reset form */}
                 {resetPw[user.id]?.open && (
                   <tr className="bg-[#0d0d0d] border-b border-[#27272a]/50">
                     <td colSpan={5} className="px-5 py-3">
@@ -295,17 +288,17 @@ export function AdminPanel() {
                         <input
                           type="password"
                           placeholder="Mín. 6 caracteres"
-                          value={resetPw[user.id]?.value ?? ''}
+                          value={resetPw[user.id]?.value ?? ''''}
                           onChange={e => setResetPw(p => ({ ...p, [user.id]: { ...p[user.id], value: e.target.value } }))}
                           className="px-3 py-1.5 rounded-lg bg-[#141414] border border-[#27272a] text-white text-sm focus:outline-none focus:border-[#d4772c] transition-all w-48"
-                          onKeyDown={e => e.key === 'Enter' && handleResetPw(user.id)}
+                          onKeyDown={e => e.key === ''Enter'' && handleResetPw(user.id)}
                         />
                         <button
                           onClick={() => handleResetPw(user.id)}
                           disabled={resetPw[user.id]?.saving}
                           className="px-4 py-1.5 rounded-lg bg-[#d4772c] hover:bg-[#c0671e] text-white text-xs font-bold transition-all disabled:opacity-50"
                         >
-                          {resetPw[user.id]?.saving ? 'Guardando...' : 'Guardar'}
+                          {resetPw[user.id]?.saving ? ''Guardando...'' : ''Guardar''}
                         </button>
                         <button
                           onClick={() => closeReset(user.id)}
