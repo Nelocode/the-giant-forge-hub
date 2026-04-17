@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
   turbopack: {},
   // Keep webpack config for non-turbopack builds (e.g. production build)
   typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
+  // eslint: { ignoreDuringBuilds: true } as any,
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals = config.externals || [];

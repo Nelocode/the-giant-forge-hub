@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { getUserByEmail } from '@/lib/db';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   secret: process.env.NEXTAUTH_SECRET ?? 'forge-secret-dev-change-in-prod',
   session: { strategy: 'jwt' },
   pages: {
