@@ -663,7 +663,7 @@ export function BentoGrid({ session }: { session: Session }) {
   const [mounted, setMounted] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { width: containerWidth } = useContainerWidth(containerRef, 1400);
+  const { width: containerWidth } = useContainerWidth(containerRef);
 
   useEffect(() => {
     setMounted(true);
