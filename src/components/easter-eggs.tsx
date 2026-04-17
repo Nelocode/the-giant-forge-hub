@@ -183,15 +183,221 @@ export function EggToast({
 }
 
 /* ══════════════════════════════════════════════════════════════
+   MAPLE RUSH OVERLAY (Canadian Easter Egg)
+   ══════════════════════════════════════════════════════════════ */
+export function MapleRushOverlay({ onDone }: { onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 3800);
+    return () => clearTimeout(t);
+  }, [onDone]);
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        pointerEvents: 'none',
+        animation: 'copper-rush-bg 3.8s ease-in-out forwards',
+      }}
+    >
+      {/* Background vignette */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(220,38,38,0.15) 0%, transparent 70%)',
+        animation: 'copper-rush-vignette 3.8s ease-in-out forwards',
+      }}/>
+
+      {/* Floating Maple leaves */}
+      {CU_PARTICLES.map((p, i) => (
+        <div
+          key={i}
+          style={{
+            position: 'absolute',
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            fontSize: p.size * 1.5,
+            animation: `copper-particle ${p.dur}s ${p.delay}s ease-out both`,
+            userSelect: 'none',
+            opacity: p.opacity,
+          }}
+        >
+          🍁
+        </div>
+      ))}
+
+      {/* Centre banner */}
+      <div style={{
+        position: 'absolute', top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        textAlign: 'center',
+        animation: 'copper-banner 3.8s ease-in-out forwards',
+      }}>
+        {/* Glow ring */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 260, height: 260,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(220,38,38,0.2) 0%, transparent 70%)',
+          filter: 'blur(20px)',
+          animation: 'copper-banner 3.8s ease-in-out forwards',
+        }}/>
+
+        {/* Main text */}
+        <div style={{
+          fontSize: 60, fontWeight: 900, letterSpacing: '-0.06em', lineHeight: 1,
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          filter: 'drop-shadow(0 0 30px rgba(220,38,38,0.7))',
+        }}>
+          O CANADA!
+        </div>
+
+        {/* Sub info */}
+        <div style={{
+          marginTop: 10, fontSize: 13, fontWeight: 600,
+          color: 'rgba(239,68,68,0.75)', letterSpacing: '0.08em',
+        }}>
+          TSX · TSXV · Operaciones
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HIDDEN MINERALS (Collectibles)
+   ══════════════════════════════════════════════════════════════ */
+const MINERAL_TYPES = [
+  { symbol: 'Mo', name: 'Molibdeno', exp: 50 },
+  { symbol: 'Au', name: 'Oro', exp: 150 },
+  { symbol: 'Ag', name: 'Plata', exp: 75 },
+  { symbol: 'Cu', name: 'Cobre Nativo', exp: 100 },
+];
+
+export function HiddenMineral({ onFound }: { onFound: (msg: string) => void }) {
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState({ top: '10%', left: '10%' });
+  const [mineral, setMineral] = useState(MINERAL_TYPES[0]);
+
+  useEffect(() => {
+    // 5% chance to appear after mount
+    if (Math.random() < 0.05) {
+      const top = Math.max(10, Math.floor(Math.random() * 80)) + '%';
+      const left = Math.max(10, Math.floor(Math.random() * 80)) + '%';
+      const type = MINERAL_TYPES[Math.floor(Math.random() * MINERAL_TYPES.length)];
+      setPos({ top, left });
+      setMineral(type);
+      setVisible(true);
+    }
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      onClick={() => {
+        setVisible(false);
+        onFound(`¡Encontraste una veta de ${mineral.name} (${mineral.symbol})! +${mineral.exp} EXP minera.`);
+      }}
+      style={{
+        position: 'absolute',
+        top: pos.top,
+        left: pos.left,
+        cursor: 'pointer',
+        zIndex: 10,
+        fontSize: '12px',
+        padding: '4px',
+        opacity: 0.15, // Very subtle
+        transition: 'opacity 0.2s',
+      }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.8'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.15'; }}
+      title="¿Qué es esto?"
+    >
+      💎
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LANTERN OVERLAY
+   ══════════════════════════════════════════════════════════════ */
+export function LanternOverlay() {
+  useEffect(() => {
+    function handleMouseMove(e: MouseEvent) {
+      document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+    }
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      document.documentElement.style.removeProperty('--mouse-x');
+      document.documentElement.style.removeProperty('--mouse-y');
+    };
+  }, []);
+
+  return <div className="lantern-overlay" />;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PANIC OVERLAY
+   ══════════════════════════════════════════════════════════════ */
+export function PanicOverlay({ onDone }: { onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 5000);
+    return () => clearTimeout(t);
+  }, [onDone]);
+
+  return (
+    <div className="fixed inset-0 z-[9999] pointer-events-none panic-overlay flex items-center justify-center">
+      <div
+        className="absolute inset-0"
+        style={{
+          border: '12px solid transparent',
+          borderImage: 'repeating-linear-gradient(45deg, #000 0, #000 20px, #eab308 20px, #eab308 40px) 12',
+          opacity: 0.8
+        }}
+      />
+      <div className="bg-black/80 px-8 py-6 rounded-2xl border-2 border-red-600 animate-pulse text-center">
+        <div className="text-red-500 font-bold text-4xl mb-2">⚠️ PELIGRO ⚠️</div>
+        <div className="text-white font-mono">NIVEL 4 COMPROMETIDO</div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
    HOOK — useEasterEggs
    ══════════════════════════════════════════════════════════════ */
 export function useEasterEggs() {
   const [copperRush, setCopperRush]   = useState(false);
+  const [mapleRush, setMapleRush]     = useState(false);
+  const [quakeMode, setQuakeMode]     = useState(false);
+  const [panicMode, setPanicMode]     = useState(false);
+  const [lanternMode, setLanternMode] = useState(false);
   const [toast, setToast]             = useState<{ msg: string; icon?: string } | null>(null);
   const konamiRef                     = useRef<string[]>([]);
   const titleClicksRef                = useRef(0);
   const titleTimerRef                 = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const tintoFiredRef                 = useRef(false);
+  const scrollHitsRef                 = useRef(0);
+  const scrollTimerRef                = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  /* ── Quake effect ── */
+  useEffect(() => {
+    if (quakeMode) {
+      document.body.classList.add('animate-quake');
+      const t = setTimeout(() => {
+        document.body.classList.remove('animate-quake');
+        setQuakeMode(false);
+      }, 3000);
+      return () => {
+        document.body.classList.remove('animate-quake');
+        clearTimeout(t);
+      };
+    }
+  }, [quakeMode]);
 
   /* ── Console easter egg — fires once on mount ── */
   useEffect(() => {
@@ -221,17 +427,58 @@ export function useEasterEggs() {
     );
   }, []);
 
-  /* ── Konami Code listener ── */
+  /* ── Keyboard sequence listeners ── */
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      konamiRef.current = [...konamiRef.current, e.key].slice(-KONAMI.length);
-      if (konamiRef.current.join(',') === KONAMI.join(',')) {
+      // Ignore if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const newKonami = [...konamiRef.current, e.key].slice(-KONAMI.length);
+      konamiRef.current = newKonami;
+
+      const sequence = newKonami.join('').toLowerCase();
+
+      if (newKonami.join(',') === KONAMI.join(',')) {
         setCopperRush(true);
+        konamiRef.current = [];
+      } else if (sequence.endsWith('quake') || sequence.endsWith('sismo')) {
+        setQuakeMode(true);
+        setToast({ msg: '¡Actividad sísmica detectada en la veta principal! Asegurando la estructura... 👷‍♂️', icon: '⚠️' });
+        konamiRef.current = [];
+      } else if (sequence.endsWith('lllll')) {
+        setLanternMode(prev => !prev);
+        setToast({ msg: 'Modo linterna de casco activado/desactivado.', icon: '🔦' });
+        konamiRef.current = [];
+      } else if (sequence.endsWith('maple') || sequence.endsWith('syrup')) {
+        setMapleRush(true);
         konamiRef.current = [];
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  /* ── Deep Dig (Scroll to bottom) ── */
+  useEffect(() => {
+    function onScroll() {
+      // Check if user has scrolled to the very bottom
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 2) {
+        scrollHitsRef.current += 1;
+        clearTimeout(scrollTimerRef.current);
+
+        if (scrollHitsRef.current >= 4) {
+          setToast({ msg: '¡Cuidado! Has excavado demasiado profundo y despertaste al Balrog de Moria... (o encontraste más Cobre).', icon: '⛏️' });
+          scrollHitsRef.current = 0;
+        } else {
+          scrollTimerRef.current = setTimeout(() => { scrollHitsRef.current = 0; }, 2000);
+        }
+      }
+    }
+    window.addEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      clearTimeout(scrollTimerRef.current);
+    };
   }, []);
 
   /* ── Hora del tinto — 3:00 pm Colombia (UTC-5) ── */
@@ -275,12 +522,29 @@ export function useEasterEggs() {
     setToast({ msg: 'Sistema 100% operativo — eh? 🍁', icon: '🇨🇦' });
   }, []);
 
+  const triggerPanic = useCallback(() => {
+    setPanicMode(true);
+    setToast({ msg: 'Alarma de evacuación: Nivel 4 comprometido. ¡Es broma! Vuelve al trabajo.', icon: '🚨' });
+  }, []);
+
+  const onMineralFound = useCallback((msg: string) => {
+    setToast({ msg, icon: '💎' });
+  }, []);
+
   return {
     copperRush,
     stopCopperRush: () => setCopperRush(false),
+    mapleRush,
+    stopMapleRush: () => setMapleRush(false),
+    quakeMode,
+    panicMode,
+    stopPanicMode: () => setPanicMode(false),
+    triggerPanic,
+    lanternMode,
     toast,
     clearToast:     () => setToast(null),
     onTitleClick,
     onUptimeClick,
+    onMineralFound,
   };
 }
