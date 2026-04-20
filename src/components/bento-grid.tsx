@@ -191,6 +191,20 @@ function ToolCard({ tool }: { tool: Tool }) {
           padding: '14px 16px 12px',
         }}
       >
+        {/* Giant ghost icon — background accent */}
+        <div style={{
+          position: 'absolute', bottom: -10, right: -10,
+          width: '65%', height: '65%',
+          color: tool.accent,
+          opacity: hov ? 0.10 : 0.055,
+          transition: 'opacity 0.4s',
+          pointerEvents: 'none',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end',
+          zIndex: 0,
+        }}>
+          {tool.icon}
+        </div>
+
         {/* Subtle dot grid */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
@@ -629,6 +643,114 @@ function ActivityCard({ onUptimeClick }: { onUptimeClick?: () => void }) {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   FORGE FOOTER
+   ══════════════════════════════════════════════════════════════ */
+function ForgeFooter() {
+  const [clicked, setClicked] = useState(0);
+  const [spark,   setSpark]   = useState(false);
+
+  function handleClick() {
+    const next = clicked + 1;
+    setClicked(next);
+    if (next >= 5) {
+      setSpark(true);
+      setClicked(0);
+      setTimeout(() => setSpark(false), 1800);
+    }
+  }
+
+  return (
+    <div style={{
+      marginTop: 32, paddingBottom: 20,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+    }}>
+      {/* Divider */}
+      <div style={{
+        width: '100%', height: 1,
+        background: 'linear-gradient(90deg, transparent, rgba(212,119,44,0.2) 30%, rgba(212,119,44,0.2) 70%, transparent)',
+        marginBottom: 10,
+      }}/>
+
+      {/* Main footer line */}
+      <div
+        onClick={handleClick}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 7,
+          cursor: 'default', userSelect: 'none',
+          transition: 'opacity 0.2s',
+        }}
+      >
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.18)' }}>
+          Made with
+        </span>
+        {/* Animated heart */}
+        <span
+          style={{
+            fontSize: 13,
+            display: 'inline-block',
+            animation: spark ? 'footer-spark 1.8s ease forwards' : 'footer-heartbeat 2.4s ease-in-out infinite',
+            filter: spark ? 'drop-shadow(0 0 8px #f91117)' : 'none',
+            transition: 'filter 0.3s',
+          }}
+        >
+          {spark ? '🔥' : '❤️'}
+        </span>
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.18)' }}>
+          and
+        </span>
+        {/* Cu element badge */}
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 3,
+          padding: '2px 8px', borderRadius: 100,
+          background: 'rgba(212,119,44,0.08)',
+          border: '1px solid rgba(212,119,44,0.18)',
+        }}>
+          <span style={{ fontSize: 10, fontWeight: 900, fontFamily: 'monospace', color: '#d4772c', letterSpacing: '-0.02em' }}>Cu</span>
+          <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(212,119,44,0.6)' }}>Copper</span>
+        </span>
+      </div>
+
+      {/* Spark message */}
+      {spark && (
+        <p style={{
+          fontSize: 9.5, color: '#d4772c', letterSpacing: '0.1em',
+          fontWeight: 600, opacity: 0.8,
+          animation: 'egg-toast-in 0.3s ease forwards',
+        }}>
+          ¡Cu · #29 · Forjado con fuego! 🔩⚒️
+        </p>
+      )}
+
+      {/* Subtle coordinates */}
+      <p style={{
+        fontSize: 8, color: 'rgba(255,255,255,0.1)',
+        fontFamily: 'monospace', letterSpacing: '0.08em',
+        marginTop: 2,
+      }}>
+        1°09′N 76°38′W · Mocoa, Colombia → TSX · TSXV
+      </p>
+
+      <style>{`
+        @keyframes footer-heartbeat {
+          0%, 100% { transform: scale(1); }
+          14%       { transform: scale(1.18); }
+          28%       { transform: scale(1); }
+          42%       { transform: scale(1.12); }
+          56%       { transform: scale(1); }
+        }
+        @keyframes footer-spark {
+          0%   { transform: scale(1) rotate(0deg); }
+          20%  { transform: scale(1.5) rotate(-12deg); }
+          50%  { transform: scale(1.2) rotate(8deg); }
+          80%  { transform: scale(1.1) rotate(-5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
    HERO HEADER
    ══════════════════════════════════════════════════════════════ */
 function HeroHeader({ session, onTitleClick }: { session: Session; onTitleClick?: () => void }) {
@@ -886,6 +1008,9 @@ export function BentoGrid({ session }: { session: Session }) {
           </div>
         ))}
       </ReactGridLayout>
+
+      {/* ── Footer ── */}
+      <ForgeFooter />
     </div>
   );
 }

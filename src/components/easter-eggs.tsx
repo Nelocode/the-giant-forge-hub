@@ -459,16 +459,23 @@ export function useEasterEggs() {
   }, []);
 
   /* ── Deep Dig (Scroll to bottom) ── */
+  const deepDigCooldownKey = 'tgf-deepdig-last';
   useEffect(() => {
     function onScroll() {
-      // Check if user has scrolled to the very bottom
       if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 2) {
+        // Check 1-hour cooldown
+        try {
+          const last = parseInt(localStorage.getItem(deepDigCooldownKey) ?? '0', 10);
+          if (Date.now() - last < 60 * 60 * 1000) return; // less than 1h ago → skip
+        } catch {}
+
         scrollHitsRef.current += 1;
         clearTimeout(scrollTimerRef.current);
 
         if (scrollHitsRef.current >= 4) {
           setToast({ msg: '¡Cuidado! Has excavado demasiado profundo y despertaste al Balrog de Moria... (o encontraste más Cobre).', icon: '⛏️' });
           scrollHitsRef.current = 0;
+          try { localStorage.setItem(deepDigCooldownKey, String(Date.now())); } catch {}
         } else {
           scrollTimerRef.current = setTimeout(() => { scrollHitsRef.current = 0; }, 2000);
         }
