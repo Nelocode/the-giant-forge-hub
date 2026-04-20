@@ -7,6 +7,7 @@
    ───────────────────────────────────────────────────────────── */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { Session } from 'next-auth';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
@@ -148,170 +149,237 @@ function CardShell({
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════
    TOOL VIEWER — modal iframe con barra de regreso al Hub
-   ══════════════════════════════════════════════════════════════ */
+   Usa createPortal para escapar del transform context del grid
+   ═════════════════════════════════════════════════════════════ */
 function ToolViewer({ tool, onClose }: { tool: Tool; onClose: () => void }) {
   const [iframeBlocked, setIframeBlocked] = useState(false);
   const [loaded,        setLoaded]        = useState(false);
+  const [mounted,       setMounted]       = useState(false);
 
+  // SSR safety — portal needs document
+  useEffect(() => { setMounted(true); }, []);
+
+  // Escape key
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // Prevent body scroll while viewer is open
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
   }, [onClose]);
 
+  // Detect X-Frame-Options block — 3s is enough for a LAN/cloud app
   useEffect(() => {
-    const t = setTimeout(() => { if (!loaded) setIframeBlocked(true); }, 6000);
+    const t = setTimeout(() => { if (!loaded) setIframeBlocked(true); }, 3000);
     return () => clearTimeout(t);
   }, [loaded]);
 
-  return (
+  if (!mounted) return null;
+
+  const modal = (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 8000,
+      // We render in document.body via portal, so fixed covers the real viewport
+      position: 'fixed', inset: 0, zIndex: 99999,
       display: 'flex', flexDirection: 'column',
       background: '#070707',
-      animation: 'viewer-slide-in 0.28s cubic-bezier(0.22,1,0.36,1) forwards',
+      animation: 'viewer-slide-in 0.25s cubic-bezier(0.22,1,0.36,1) forwards',
     }}>
-      {/* Top bar */}
+      {/* ─ Top bar ─ */}
       <div style={{
-        flexShrink: 0, height: 48,
+        flexShrink: 0, height: 50,
         display: 'flex', alignItems: 'center', gap: 10,
-        padding: '0 16px',
-        background: '#0a0a0a',
-        borderBottom: `1px solid ${tool.accent}30`,
-        boxShadow: `0 1px 16px rgba(0,0,0,0.5)`,
+        padding: '0 18px',
+        background: '#0d0d0d',
+        borderBottom: `1px solid ${tool.accent}35`,
+        boxShadow: '0 2px 20px rgba(0,0,0,0.6)',
       }}>
-        {/* ← Volver al Hub */}
+        {/* ← Back */}
         <button
           onClick={onClose}
           style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '6px 13px', borderRadius: 8,
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            color: '#fff', fontSize: 11, fontWeight: 700,
-            letterSpacing: '0.06em', cursor: 'pointer', transition: 'all 0.18s', flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 7,
+            padding: '7px 14px', borderRadius: 9,
+            background: 'rgba(255,255,255,0.07)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            color: '#fff', fontSize: 11.5, fontWeight: 700,
+            letterSpacing: '0.05em', cursor: 'pointer',
+            transition: 'all 0.18s', flexShrink: 0,
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = tool.accent + '22'; e.currentTarget.style.borderColor = tool.accent + '55'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = tool.accent + '28';
+            e.currentTarget.style.borderColor = tool.accent + '60';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.07)';
+            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+          }}
         >
-          <svg width={12} height={12} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg width={13} height={13} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
           </svg>
           Volver al Hub
         </button>
 
-        <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }}/>
+        <div style={{ width: 1, height: 22, background: 'rgba(255,255,255,0.09)', flexShrink: 0 }}/>
 
         {/* Tool identity */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
           <div style={{
-            width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+            width: 24, height: 24, borderRadius: 7, flexShrink: 0,
             background: `${tool.accent}18`, border: `1px solid ${tool.accent}30`,
-            color: tool.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4,
+            color: tool.accent, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 14,
           }}>{tool.icon}</div>
-          <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{
+            fontSize: 14, fontWeight: 800, color: '#fff',
+            letterSpacing: '-0.02em', overflow: 'hidden',
+            textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
             {tool.name}
           </span>
           <span style={{
-            fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
-            padding: '2px 7px', borderRadius: 100,
-            background: `${tool.accent}15`, border: `1px solid ${tool.accent}30`,
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
+            textTransform: 'uppercase', padding: '2px 8px', borderRadius: 100,
+            background: `${tool.accent}16`, border: `1px solid ${tool.accent}32`,
             color: tool.accent, flexShrink: 0,
           }}>{tool.badge}</span>
         </div>
 
-        {/* New tab */}
+        {/* Open in new tab */}
         <button
           onClick={() => window.open(tool.url, '_blank', 'noopener,noreferrer')}
           style={{
             display: 'flex', alignItems: 'center', gap: 5,
-            padding: '5px 10px', borderRadius: 7,
-            background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.35)', fontSize: 9.5, fontWeight: 600,
-            letterSpacing: '0.08em', cursor: 'pointer', flexShrink: 0, transition: 'all 0.18s',
+            padding: '6px 11px', borderRadius: 7,
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.09)',
+            color: 'rgba(255,255,255,0.38)', fontSize: 10, fontWeight: 600,
+            letterSpacing: '0.07em', cursor: 'pointer', flexShrink: 0,
+            transition: 'all 0.15s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.38)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'; }}
         >
-          <svg width={10} height={10} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          <svg width={11} height={11} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
           </svg>
-          Nueva pestaña ↗
+          Nueva pestaña
         </button>
 
-        {/* Close × */}
+        {/* × Close */}
         <button
           onClick={onClose}
           style={{
-            width: 28, height: 28, borderRadius: 7, flexShrink: 0,
+            width: 30, height: 30, borderRadius: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.4)', fontSize: 16, cursor: 'pointer', transition: 'all 0.15s',
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.09)',
+            color: 'rgba(255,255,255,0.45)', fontSize: 18,
+            cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(249,17,23,0.15)'; e.currentTarget.style.color = '#f91117'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(249,17,23,0.18)'; e.currentTarget.style.color = '#f91117'; e.currentTarget.style.borderColor = '#f9111730'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'; }}
         >×</button>
       </div>
 
-      {/* Content area */}
+      {/* ─ Content ─ */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {/* Loading spinner */}
         {!loaded && !iframeBlocked && (
           <div style={{
-            position: 'absolute', inset: 0, zIndex: 1,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            background: '#070707', gap: 14,
+            position: 'absolute', inset: 0, zIndex: 2,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            background: '#070707', gap: 16,
           }}>
             <div style={{
-              width: 40, height: 40, borderRadius: '50%',
-              border: `3px solid ${tool.accent}30`, borderTopColor: tool.accent,
-              animation: 'viewer-spin 0.8s linear infinite',
+              width: 44, height: 44, borderRadius: '50%',
+              border: `3px solid ${tool.accent}25`,
+              borderTopColor: tool.accent,
+              animation: 'viewer-spin 0.75s linear infinite',
             }}/>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em' }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.06em' }}>
               Cargando {tool.name}...
             </p>
           </div>
         )}
 
+        {/* Blocked state */}
         {iframeBlocked ? (
           <div style={{
             position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            gap: 16, padding: 32, textAlign: 'center',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            gap: 18, padding: 40, textAlign: 'center',
+            background: '#070707',
           }}>
-            <span style={{ fontSize: 40 }}>🔒</span>
-            <div>
-              <p style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 6 }}>
-                {tool.name} no permite embebido
+            {/* Icon */}
+            <div style={{
+              width: 72, height: 72, borderRadius: 20,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.09)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 32,
+            }}>🔗</div>
+
+            <div style={{ maxWidth: 420 }}>
+              <p style={{ fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 8, letterSpacing: '-0.02em' }}>
+                {tool.name} requiere abrirse en su propia pestaña
               </p>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, maxWidth: 360 }}>
-                Esta herramienta tiene restricciones de seguridad (X-Frame-Options). Ábrela en una pestaña separada y usa el botón de regreso del navegador.
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', lineHeight: 1.65 }}>
+                Esta herramienta bloquea el embebido por políticas de seguridad (X-Frame-Options).
+                Al hacer clic en <strong style={{ color: 'rgba(255,255,255,0.7)' }}>Abrir herramienta</strong>,
+                se abre en una nueva pestaña. Usa el botón de regreso del navegador o cierra esa pestaña para volver al Hub.
               </p>
             </div>
-            <button
-              onClick={() => window.open(tool.url, '_blank', 'noopener,noreferrer')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 7,
-                padding: '10px 22px', borderRadius: 10,
-                background: tool.accent, border: 'none',
-                color: '#fff', fontSize: 12, fontWeight: 700,
-                letterSpacing: '0.08em', cursor: 'pointer',
-                boxShadow: `0 0 28px ${tool.glow}`,
-              }}
-            >
-              Abrir en nueva pestaña ↗
-            </button>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 11, cursor: 'pointer' }}>
-              ← Volver al Hub
-            </button>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+              <button
+                onClick={() => window.open(tool.url, '_blank', 'noopener,noreferrer')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '12px 28px', borderRadius: 11,
+                  background: tool.accent, border: 'none',
+                  color: '#fff', fontSize: 13, fontWeight: 700,
+                  letterSpacing: '0.07em', cursor: 'pointer',
+                  boxShadow: `0 0 32px ${tool.glow}, 0 4px 16px rgba(0,0,0,0.4)`,
+                  transition: 'opacity 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+              >
+                <svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                Abrir {tool.name} en nueva pestaña
+              </button>
+              <button
+                onClick={onClose}
+                style={{
+                  background: 'none', border: 'none',
+                  color: 'rgba(255,255,255,0.28)', fontSize: 11.5,
+                  cursor: 'pointer', letterSpacing: '0.04em',
+                  transition: 'color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.28)'; }}
+              >
+                ← Volver al Hub
+              </button>
+            </div>
           </div>
         ) : (
           <iframe
+            key={tool.url}
             src={tool.url}
-            style={{ width: '100%', height: '100%', border: 'none' }}
+            style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
             onLoad={() => setLoaded(true)}
-            allow="fullscreen"
+            allow="fullscreen; clipboard-read; clipboard-write"
             title={tool.name}
           />
         )}
@@ -319,13 +387,16 @@ function ToolViewer({ tool, onClose }: { tool: Tool; onClose: () => void }) {
 
       <style>{`
         @keyframes viewer-slide-in {
-          from { opacity:0; transform:translateY(10px) scale(0.99); }
-          to   { opacity:1; transform:translateY(0)    scale(1); }
+          from { opacity: 0; transform: translateY(14px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes viewer-spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );
+
+  // Portal to document.body escapes any CSS transform ancestor (react-grid-layout items)
+  return createPortal(modal, document.body);
 }
 
 /* ══════════════════════════════════════════════════════════════
