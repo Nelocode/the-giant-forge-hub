@@ -55,6 +55,30 @@ function initSchema(db: Database.Database) {
       expires_at    INTEGER,
       updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS companies (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      name       TEXT NOT NULL,
+      color      TEXT NOT NULL DEFAULT '#d4772c',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS company_events (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      title      TEXT NOT NULL,
+      event_date TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS checklist_items (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_id   INTEGER NOT NULL REFERENCES company_events(id) ON DELETE CASCADE,
+      task       TEXT NOT NULL,
+      done       INTEGER NOT NULL DEFAULT 0,
+      ai_note    TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   // Seed default admins if no users exist
@@ -149,4 +173,82 @@ export function createEvent(userId: number, data: {
 
 export function deleteEvent(id: number, userId: number) {
   getDb().prepare('DELETE FROM events WHERE id = ? AND user_id = ?').run(id, userId);
+}
+
+/* ── Companies ───────────────────────────────────────────── */
+export interface Company { id: number; name: string; color: string; created_at: string; }
+
+export function getCompanies(): Company[] {
+  return getDb().prepare('SELECT * FROM companies ORDER BY created_at ASC').all() as Company[];
+}
+
+export function createCompany(name: string, color: string): number {
+  const result = getDb().prepare(
+    'INSERT INTO companies (name, color) VALUES (?, ?)'
+  ).run(name, color);
+  return result.lastInsertRowid as number;
+}
+
+export function deleteCompany(id: number) {
+  getDb().prepare('DELETE FROM companies WHERE id = ?').run(id);
+}
+
+/* ── Company Events ──────────────────────────────────────── */
+export interface CompanyEvent { id: number; company_id: number; title: string; event_date: string; created_at: string; }
+
+export function getCompanyEvents(companyId: number): CompanyEvent[] {
+  return getDb().prepare(
+    'SELECT * FROM company_events WHERE company_id = ? ORDER BY event_date ASC'
+  ).all(companyId) as CompanyEvent[];
+}
+
+export function createCompanyEvent(companyId: number, title: string, eventDate: string): number {
+  const result = getDb().prepare(
+    'INSERT INTO company_events (company_id, title, event_date) VALUES (?, ?, ?)'
+  ).run(companyId, title, eventDate);
+  return result.lastInsertRowid as number;
+}
+
+export function updateCompanyEvent(id: number, fields: { title?: string; event_date?: string }) {
+  const updates = Object.entries(fields)
+    .filter(([, v]) => v !== undefined)
+    .map(([k]) => `${k} = ?`)
+    .join(', ');
+  const values = Object.values(fields).filter(v => v !== undefined);
+  if (!updates) return;
+  getDb().prepare(`UPDATE company_events SET ${updates} WHERE id = ?`).run(...values, id);
+}
+
+export function deleteCompanyEvent(id: number) {
+  getDb().prepare('DELETE FROM company_events WHERE id = ?').run(id);
+}
+
+/* ── Checklist Items ─────────────────────────────────────── */
+export interface ChecklistItem { id: number; event_id: number; task: string; done: number; ai_note: string | null; created_at: string; }
+
+export function getChecklistItems(eventId: number): ChecklistItem[] {
+  return getDb().prepare(
+    'SELECT * FROM checklist_items WHERE event_id = ? ORDER BY created_at ASC'
+  ).all(eventId) as ChecklistItem[];
+}
+
+export function createChecklistItem(eventId: number, task: string): number {
+  const result = getDb().prepare(
+    'INSERT INTO checklist_items (event_id, task) VALUES (?, ?)'
+  ).run(eventId, task);
+  return result.lastInsertRowid as number;
+}
+
+export function updateChecklistItem(id: number, fields: { done?: number; ai_note?: string }) {
+  const updates = Object.entries(fields)
+    .filter(([, v]) => v !== undefined)
+    .map(([k]) => `${k} = ?`)
+    .join(', ');
+  const values = Object.values(fields).filter(v => v !== undefined);
+  if (!updates) return;
+  getDb().prepare(`UPDATE checklist_items SET ${updates} WHERE id = ?`).run(...values, id);
+}
+
+export function deleteChecklistItem(id: number) {
+  getDb().prepare('DELETE FROM checklist_items WHERE id = ?').run(id);
 }

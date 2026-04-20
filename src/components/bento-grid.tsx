@@ -15,6 +15,7 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { getInitials } from '@/lib/utils';
 import { useEasterEggs, CopperRushOverlay, EggToast } from './easter-eggs';
+import { EventChecklistCard } from './event-checklist-card';
 
 /* ── Tool definitions ─────────────────────────────────────── */
 interface Tool {
@@ -83,14 +84,29 @@ const STATUS_CFG = {
    Activity  3col×header+rows min ≈ 172px → minH=6 → 182px
 ───────────────────────────────────────────────────────────────── */
 const DEFAULT_LAYOUT = [
-  //                           x   y   w   h   minW minH
-  { i: 'copper-monitor', x:0,  y:0,  w:5, h:10, minW:3, minH:7 },  // 310px
-  { i: 'videopanel',     x:5,  y:0,  w:4, h:8,  minW:3, minH:7 },  // 246px
-  { i: 'calendar',       x:9,  y:0,  w:3, h:10, minW:2, minH:5 },  // 310px
-  { i: 'stats',          x:5,  y:8,  w:2, h:7,  minW:2, minH:7 },  // 214px
-  { i: 'quick',          x:7,  y:8,  w:2, h:7,  minW:2, minH:6 },  // 214px
-  { i: 'activity',       x:0,  y:10, w:9, h:7,  minW:4, minH:6 },  // 214px
+  //                              x   y   w   h   minW minH
+  { i: 'copper-monitor',   x:0,  y:0,  w:5, h:10, minW:3, minH:7 },
+  { i: 'videopanel',       x:5,  y:0,  w:4, h:8,  minW:3, minH:7 },
+  { i: 'calendar',         x:9,  y:0,  w:3, h:10, minW:2, minH:5 },
+  { i: 'stats',            x:5,  y:8,  w:2, h:7,  minW:2, minH:7 },
+  { i: 'quick',            x:7,  y:8,  w:2, h:7,  minW:2, minH:6 },
+  { i: 'activity',         x:0,  y:10, w:9, h:7,  minW:4, minH:6 },
+  { i: 'event-checklist',  x:9,  y:10, w:3, h:14, minW:3, minH:10 },
 ];
+
+/* ── Bento catalog (for toggle panel) ─────────────────────── */
+const BENTO_CATALOG = [
+  { id: 'copper-monitor',  label: 'Copper Monitor',       icon: '📈' },
+  { id: 'videopanel',      label: 'VideoPanel',           icon: '🎬' },
+  { id: 'calendar',        label: 'Calendario',           icon: '📅' },
+  { id: 'stats',           label: 'Mi Perfil',            icon: '👤' },
+  { id: 'quick',           label: 'Acceso Rápido',        icon: '⚡' },
+  { id: 'activity',        label: 'Estado del Sistema',   icon: '🔧' },
+  { id: 'event-checklist', label: 'Checklist de Eventos', icon: '✅' },
+] as const;
+
+const ALL_IDS = BENTO_CATALOG.map(b => b.id) as string[];
+const VISIBILITY_KEY = 'tgf-bento-visibility-v1';
 
 const LAYOUT_KEY = 'tgf-hub-layout-v11';
 
@@ -660,19 +676,26 @@ function HeroHeader({ session, onTitleClick }: { session: Session; onTitleClick?
    MAIN BENTO GRID
    ══════════════════════════════════════════════════════════════ */
 export function BentoGrid({ session }: { session: Session }) {
-  const [layout, setLayout] = useState(DEFAULT_LAYOUT);
-  const [mounted, setMounted] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [layout,      setLayout]      = useState(DEFAULT_LAYOUT);
+  const [mounted,     setMounted]     = useState(false);
+  const [isDragging,  setIsDragging]  = useState(false);
+  const [showCustom,  setShowCustom]  = useState(false);
+  const [visible,     setVisible]     = useState<Set<string>>(new Set(ALL_IDS));
   const containerRef = useRef<HTMLDivElement>(null);
-    const containerWidth = 1200;
+  const containerWidth = 1200;
 
   useEffect(() => {
     setMounted(true);
     try {
-      const saved = localStorage.getItem(LAYOUT_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const savedLayout = localStorage.getItem(LAYOUT_KEY);
+      if (savedLayout) {
+        const parsed = JSON.parse(savedLayout);
         if (Array.isArray(parsed) && parsed.length > 0) setLayout(parsed);
+      }
+      const savedVis = localStorage.getItem(VISIBILITY_KEY);
+      if (savedVis) {
+        const arr = JSON.parse(savedVis);
+        if (Array.isArray(arr)) setVisible(new Set(arr));
       }
     } catch {}
   }, []);
@@ -684,19 +707,47 @@ export function BentoGrid({ session }: { session: Session }) {
 
   function resetLayout() {
     setLayout(DEFAULT_LAYOUT);
-    try { localStorage.removeItem(LAYOUT_KEY); } catch {}
+    setVisible(new Set(ALL_IDS));
+    try {
+      localStorage.removeItem(LAYOUT_KEY);
+      localStorage.removeItem(VISIBILITY_KEY);
+    } catch {}
+  }
+
+  function toggleBento(id: string) {
+    setVisible(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        if (next.size <= 1) return prev; // keep at least one
+        next.delete(id);
+      } else {
+        next.add(id);
+        // Re-add to layout if not already present
+        setLayout(lay => {
+          if (lay.find(l => l.id === id)) return lay;
+          const def = DEFAULT_LAYOUT.find(d => d.i === id);
+          if (!def) return lay;
+          return [...lay, def];
+        });
+      }
+      try { localStorage.setItem(VISIBILITY_KEY, JSON.stringify([...next])); } catch {}
+      return next;
+    });
   }
 
   const eggs = useEasterEggs();
 
   const CARD_MAP: Record<string, React.ReactNode> = {
-    'copper-monitor': <ToolCard tool={TOOLS[0]} />,
-    'videopanel':     <ToolCard tool={TOOLS[1]} />,
-    'calendar':       <CalendarCard session={session} />,
-    'stats':          <StatsCard session={session} />,
-    'quick':          <QuickCard session={session} />,
-    'activity':       <ActivityCard onUptimeClick={eggs.onUptimeClick} />,
+    'copper-monitor':  <ToolCard tool={TOOLS[0]} />,
+    'videopanel':      <ToolCard tool={TOOLS[1]} />,
+    'calendar':        <CalendarCard session={session} />,
+    'stats':           <StatsCard session={session} />,
+    'quick':           <QuickCard session={session} />,
+    'activity':        <ActivityCard onUptimeClick={eggs.onUptimeClick} />,
+    'event-checklist': <EventChecklistCard />,
   };
+
+  const visibleLayout = layout.filter(item => visible.has(item.i));
 
   if (!mounted) return null;
 
@@ -709,25 +760,89 @@ export function BentoGrid({ session }: { session: Session }) {
       <HeroHeader session={session} onTitleClick={eggs.onTitleClick} />
 
       {/* Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, position: 'relative' }}>
         <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.04em' }}>
           {isDragging ? '↕ Suelta para colocar' : 'Arrastra · Redimensiona desde las esquinas'}
         </p>
-        <button
-          onClick={resetLayout}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.22)', background: 'none', border: 'none', cursor: 'pointer' }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#d4772c')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.22)')}
-        >
-          <svg style={{ width: 11, height: 11 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-          </svg>
-          Restablecer
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Personalizar button */}
+          <button
+            onClick={() => setShowCustom(v => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em',
+              color: showCustom ? '#a855f7' : 'rgba(255,255,255,0.22)',
+              background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s',
+            }}
+          >
+            <svg style={{ width: 11, height: 11 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+            </svg>
+            Personalizar
+          </button>
+          {/* Restablecer */}
+          <button
+            onClick={resetLayout}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.22)', background: 'none', border: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#d4772c')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.22)')}
+          >
+            <svg style={{ width: 11, height: 11 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Restablecer
+          </button>
+        </div>
       </div>
 
+      {/* ── Bento customization panel ── */}
+      {showCustom && (
+        <div style={{
+          marginBottom: 14, padding: '12px 14px',
+          background: 'rgba(168,85,247,0.06)',
+          border: '1px solid rgba(168,85,247,0.18)',
+          borderRadius: 12,
+        }}>
+          <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#a855f7', marginBottom: 10 }}>Personalizar tarjetas visibles</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            {BENTO_CATALOG.map(b => {
+              const isOn = visible.has(b.id);
+              return (
+                <button
+                  key={b.id}
+                  onClick={() => toggleBento(b.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '6px 11px', borderRadius: 100,
+                    background: isOn ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${isOn ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.09)'}`,
+                    cursor: 'pointer', transition: 'all 0.2s',
+                  }}
+                >
+                  <span style={{ fontSize: 11 }}>{b.icon}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: isOn ? '#d8b4fe' : 'rgba(255,255,255,0.38)', transition: 'color 0.2s' }}>{b.label}</span>
+                  {/* Toggle indicator */}
+                  <div style={{
+                    width: 22, height: 12, borderRadius: 6,
+                    background: isOn ? '#7c3aed' : 'rgba(255,255,255,0.1)',
+                    position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+                  }}>
+                    <div style={{
+                      position: 'absolute', top: 2, left: isOn ? 12 : 2,
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: isOn ? '#fff' : 'rgba(255,255,255,0.35)',
+                      transition: 'left 0.2s, background 0.2s',
+                    }}/>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <ReactGridLayout
-        layout={layout}
+        layout={visibleLayout}
         width={containerWidth ?? 1200}
         gridConfig={{
           cols: 12,
@@ -746,7 +861,7 @@ export function BentoGrid({ session }: { session: Session }) {
         onDragStop={() => setIsDragging(false)}
         style={{ minHeight: 400 }}
       >
-        {layout.map(item => (
+        {visibleLayout.map(item => (
           <div key={item.i} style={{ position: 'relative', height: '100%' }}>
             {/* Drag handle — invisible overlay at top */}
             <div
