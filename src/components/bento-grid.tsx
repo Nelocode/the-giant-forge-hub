@@ -149,10 +149,191 @@ function CardShell({
 }
 
 /* ══════════════════════════════════════════════════════════════
+   TOOL VIEWER — modal iframe con barra de regreso al Hub
+   ══════════════════════════════════════════════════════════════ */
+function ToolViewer({ tool, onClose }: { tool: Tool; onClose: () => void }) {
+  const [iframeBlocked, setIframeBlocked] = useState(false);
+  const [loaded,        setLoaded]        = useState(false);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  useEffect(() => {
+    const t = setTimeout(() => { if (!loaded) setIframeBlocked(true); }, 6000);
+    return () => clearTimeout(t);
+  }, [loaded]);
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 8000,
+      display: 'flex', flexDirection: 'column',
+      background: '#070707',
+      animation: 'viewer-slide-in 0.28s cubic-bezier(0.22,1,0.36,1) forwards',
+    }}>
+      {/* Top bar */}
+      <div style={{
+        flexShrink: 0, height: 48,
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '0 16px',
+        background: '#0a0a0a',
+        borderBottom: `1px solid ${tool.accent}30`,
+        boxShadow: `0 1px 16px rgba(0,0,0,0.5)`,
+      }}>
+        {/* ← Volver al Hub */}
+        <button
+          onClick={onClose}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '6px 13px', borderRadius: 8,
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            color: '#fff', fontSize: 11, fontWeight: 700,
+            letterSpacing: '0.06em', cursor: 'pointer', transition: 'all 0.18s', flexShrink: 0,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = tool.accent + '22'; e.currentTarget.style.borderColor = tool.accent + '55'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; }}
+        >
+          <svg width={12} height={12} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Volver al Hub
+        </button>
+
+        <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }}/>
+
+        {/* Tool identity */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, flex: 1, minWidth: 0 }}>
+          <div style={{
+            width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+            background: `${tool.accent}18`, border: `1px solid ${tool.accent}30`,
+            color: tool.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4,
+          }}>{tool.icon}</div>
+          <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {tool.name}
+          </span>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+            padding: '2px 7px', borderRadius: 100,
+            background: `${tool.accent}15`, border: `1px solid ${tool.accent}30`,
+            color: tool.accent, flexShrink: 0,
+          }}>{tool.badge}</span>
+        </div>
+
+        {/* New tab */}
+        <button
+          onClick={() => window.open(tool.url, '_blank', 'noopener,noreferrer')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            padding: '5px 10px', borderRadius: 7,
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
+            color: 'rgba(255,255,255,0.35)', fontSize: 9.5, fontWeight: 600,
+            letterSpacing: '0.08em', cursor: 'pointer', flexShrink: 0, transition: 'all 0.18s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+        >
+          <svg width={10} height={10} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+          Nueva pestaña ↗
+        </button>
+
+        {/* Close × */}
+        <button
+          onClick={onClose}
+          style={{
+            width: 28, height: 28, borderRadius: 7, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
+            color: 'rgba(255,255,255,0.4)', fontSize: 16, cursor: 'pointer', transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(249,17,23,0.15)'; e.currentTarget.style.color = '#f91117'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
+        >×</button>
+      </div>
+
+      {/* Content area */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {!loaded && !iframeBlocked && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 1,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            background: '#070707', gap: 14,
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: '50%',
+              border: `3px solid ${tool.accent}30`, borderTopColor: tool.accent,
+              animation: 'viewer-spin 0.8s linear infinite',
+            }}/>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em' }}>
+              Cargando {tool.name}...
+            </p>
+          </div>
+        )}
+
+        {iframeBlocked ? (
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: 16, padding: 32, textAlign: 'center',
+          }}>
+            <span style={{ fontSize: 40 }}>🔒</span>
+            <div>
+              <p style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 6 }}>
+                {tool.name} no permite embebido
+              </p>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, maxWidth: 360 }}>
+                Esta herramienta tiene restricciones de seguridad (X-Frame-Options). Ábrela en una pestaña separada y usa el botón de regreso del navegador.
+              </p>
+            </div>
+            <button
+              onClick={() => window.open(tool.url, '_blank', 'noopener,noreferrer')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '10px 22px', borderRadius: 10,
+                background: tool.accent, border: 'none',
+                color: '#fff', fontSize: 12, fontWeight: 700,
+                letterSpacing: '0.08em', cursor: 'pointer',
+                boxShadow: `0 0 28px ${tool.glow}`,
+              }}
+            >
+              Abrir en nueva pestaña ↗
+            </button>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 11, cursor: 'pointer' }}>
+              ← Volver al Hub
+            </button>
+          </div>
+        ) : (
+          <iframe
+            src={tool.url}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            onLoad={() => setLoaded(true)}
+            allow="fullscreen"
+            title={tool.name}
+          />
+        )}
+      </div>
+
+      <style>{`
+        @keyframes viewer-slide-in {
+          from { opacity:0; transform:translateY(10px) scale(0.99); }
+          to   { opacity:1; transform:translateY(0)    scale(1); }
+        }
+        @keyframes viewer-spin { to { transform: rotate(360deg); } }
+      `}</style>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
    TOOL CARD — diseño limpio, ícono pequeño + info
    ══════════════════════════════════════════════════════════════ */
 function ToolCard({ tool }: { tool: Tool }) {
-  const [hov, setHov] = useState(false);
+  const [hov,  setHov]  = useState(false);
+  const [open, setOpen] = useState(false);
   const st = STATUS_CFG[tool.status];
 
   return (
@@ -301,11 +482,14 @@ function ToolCard({ tool }: { tool: Tool }) {
             boxShadow: hov ? `0 0 20px ${tool.glow}` : 'none',
           }}
           onMouseDown={e => e.stopPropagation()}
-          onClick={() => window.open(tool.url, '_blank', 'noopener,noreferrer')}
+          onClick={() => setOpen(true)}
         >
-          Abrir herramienta ↗
+          Abrir herramienta
         </button>
       </div>
+
+      {/* Viewer modal */}
+      {open && <ToolViewer tool={tool} onClose={() => setOpen(false)} />}
     </div>
   );
 }
