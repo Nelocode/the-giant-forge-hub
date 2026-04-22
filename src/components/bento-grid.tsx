@@ -17,6 +17,7 @@ import 'react-resizable/css/styles.css';
 import { getInitials } from '@/lib/utils';
 import { useEasterEggs, CopperRushOverlay, EggToast } from './easter-eggs';
 import { EventChecklistCard } from './event-checklist-card';
+import { ExecutiveSyncCard } from './executive-sync-engine';
 
 /* ── Tool definitions ─────────────────────────────────────── */
 interface Tool {
@@ -93,6 +94,7 @@ const DEFAULT_LAYOUT = [
   { i: 'quick',            x:7,  y:8,  w:2, h:7,  minW:2, minH:6 },
   { i: 'activity',         x:0,  y:10, w:9, h:7,  minW:4, minH:6 },
   { i: 'event-checklist',  x:9,  y:10, w:3, h:14, minW:3, minH:10 },
+  { i: 'executive-sync',   x:0,  y:24, w:4, h:9,  minW:3, minH:7  },
 ];
 
 /* ── Bento catalog (for toggle panel) ─────────────────────── */
@@ -104,6 +106,7 @@ const BENTO_CATALOG = [
   { id: 'quick',           label: 'Acceso Rápido',        icon: '⚡' },
   { id: 'activity',        label: 'Estado del Sistema',   icon: '🔧' },
   { id: 'event-checklist', label: 'Checklist de Eventos', icon: '✅' },
+  { id: 'executive-sync',  label: 'Executive Sync',       icon: '✍' },
 ] as const;
 
 const ALL_IDS = BENTO_CATALOG.map(b => b.id) as string[];
@@ -1122,6 +1125,7 @@ export function BentoGrid({ session }: { session: Session }) {
     'quick':           <QuickCard session={session} />,
     'activity':        <ActivityCard onUptimeClick={eggs.onUptimeClick} />,
     'event-checklist': <EventChecklistCard />,
+    'executive-sync':   <ExecutiveSyncCard session={session} />,
   };
 
   const visibleLayout = layout.filter(item => visible.has(item.i));
