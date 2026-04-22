@@ -18,6 +18,7 @@ import { getInitials } from '@/lib/utils';
 import { useEasterEggs, CopperRushOverlay, EggToast } from './easter-eggs';
 import { EventChecklistCard } from './event-checklist-card';
 import { ExecutiveSyncCard } from './executive-sync-engine';
+import { HubTour, hasHubTourBeenSeen } from './hub-tour';
 
 /* ── Tool definitions ─────────────────────────────────────── */
 interface Tool {
@@ -110,7 +111,7 @@ const BENTO_CATALOG = [
 ] as const;
 
 const ALL_IDS = BENTO_CATALOG.map(b => b.id) as string[];
-const VISIBILITY_KEY = 'tgf-bento-visibility-v1';
+const VISIBILITY_KEY = 'tgf-bento-visibility-v2'; // bump to reset defaults
 
 const LAYOUT_KEY = 'tgf-hub-layout-v11';
 
@@ -730,15 +731,24 @@ function StatsCard({ session }: { session: Session }) {
         <p style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', marginBottom: 7, lineHeight: 1.2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>
           {user?.name}
         </p>
-        <div style={{
-          fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
-          padding: '3px 10px', borderRadius: 100, flexShrink: 0,
-          background: user?.role === 'admin' ? 'rgba(212,119,44,0.12)' : 'rgba(249,17,23,0.1)',
-          color: user?.role === 'admin' ? '#d4772c' : '#f91117',
-          border: `1px solid ${user?.role === 'admin' ? 'rgba(212,119,44,0.25)' : 'rgba(249,17,23,0.2)'}`,
-        }}>
-          {user?.role === 'admin' ? '⚙ Admin' : '◎ Usuario'}
-        </div>
+        {/* Role badge */}
+        {(() => {
+          const roleCfg: Record<string, { label: string; color: string; bg: string; border: string }> = {
+            admin:   { label: '⚙ Admin',   color: '#d4772c', bg: 'rgba(212,119,44,0.12)',  border: 'rgba(212,119,44,0.25)' },
+            ceo:     { label: '⚡ CEO',    color: '#f91117', bg: 'rgba(249,17,23,0.10)',   border: 'rgba(249,17,23,0.22)' },
+            default: { label: '◎ Usuario', color: '#6366f1', bg: 'rgba(99,102,241,0.10)',  border: 'rgba(99,102,241,0.22)' },
+          };
+          const cfg = roleCfg[user?.role] ?? roleCfg.default;
+          return (
+            <div style={{
+              fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+              padding: '3px 10px', borderRadius: 100, flexShrink: 0,
+              background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`,
+            }}>
+              {cfg.label}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Stats footer */}
@@ -765,7 +775,7 @@ function QuickCard({ session }: { session: Session }) {
   const items = [
     { label: 'Mi Perfil',   sub: 'Editar cuenta',     href: '/dashboard/profile', color: '#d4772c' },
     { label: 'Calendario',  sub: 'Ver agenda',         href: '/dashboard/calendar', color: '#f91117' },
-    ...(user?.role === 'admin' ? [{ label: 'Usuarios', sub: 'Gestionar equipo', href: '/dashboard/admin', color: '#10b981' }] : []),
+    ...(user?.role === 'admin' || user?.role === 'ceo' ? [{ label: 'Usuarios', sub: 'Gestionar equipo', href: '/dashboard/admin', color: '#10b981' }] : []),
   ];
 
   return (
@@ -1060,6 +1070,7 @@ export function BentoGrid({ session }: { session: Session }) {
   const [mounted,     setMounted]     = useState(false);
   const [isDragging,  setIsDragging]  = useState(false);
   const [showCustom,  setShowCustom]  = useState(false);
+  const [showTour,    setShowTour]    = useState(false);
   const [visible,     setVisible]     = useState<Set<string>>(new Set(ALL_IDS));
   const containerRef = useRef<HTMLDivElement>(null);
   const containerWidth = 1200;
@@ -1078,6 +1089,10 @@ export function BentoGrid({ session }: { session: Session }) {
         if (Array.isArray(arr)) setVisible(new Set(arr));
       }
     } catch {}
+    // Show tour on first visit (small delay to let layout render)
+    if (!hasHubTourBeenSeen()) {
+      setTimeout(() => setShowTour(true), 800);
+    }
   }, []);
 
   const onLayoutChange = useCallback((newLayout: any[]) => {
@@ -1148,6 +1163,7 @@ export function BentoGrid({ session }: { session: Session }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Personalizar button */}
           <button
+            data-tour="bento-toggle"
             onClick={() => setShowCustom(v => !v)}
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
@@ -1243,7 +1259,11 @@ export function BentoGrid({ session }: { session: Session }) {
         style={{ minHeight: 400 }}
       >
         {visibleLayout.map(item => (
-          <div key={item.i} style={{ position: 'relative', height: '100%' }}>
+          <div
+            key={item.i}
+            data-tour={`card-${item.i}`}
+            style={{ position: 'relative', height: '100%' }}
+          >
             {/* Drag handle — invisible overlay at top */}
             <div
               className="drag-handle"
@@ -1270,6 +1290,9 @@ export function BentoGrid({ session }: { session: Session }) {
 
       {/* ── Footer ── */}
       <ForgeFooter />
+
+      {/* ── Hub Tour (first-time onboarding) ── */}
+      {showTour && <HubTour onDone={() => setShowTour(false)} />}
     </div>
   );
 }

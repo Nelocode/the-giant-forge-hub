@@ -36,7 +36,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     await signOut({ callbackUrl: '/login' });
   }
 
-  const navItems = NAV_ITEMS.filter(item => !item.adminOnly || user?.role === 'admin');
+  const navItems = NAV_ITEMS.filter(item => !item.adminOnly || user?.role === 'admin' || user?.role === 'ceo');
 
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col">
@@ -52,7 +52,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-between px-6 h-16">
           {/* Logo + Title */}
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-3 group" onClick={onTitleClick}>
+            <Link href="/dashboard" data-tour="logo" className="flex items-center gap-3 group" onClick={onTitleClick}>
               <Image
                 src="/logo.webp"
                 alt="Copper Giant"
@@ -97,7 +97,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           {/* Right: status + user */}
           <div className="flex items-center gap-3">
             {/* Live indicator */}
-            <div className="hidden sm:flex items-center gap-1.5 bg-emerald-950/30 border border-emerald-900/30 px-3 py-1 rounded-full cursor-pointer hover:bg-emerald-950/50 transition-colors" onClick={onUptimeClick}>
+            <div data-tour="live-status" className="hidden sm:flex items-center gap-1.5 bg-emerald-950/30 border border-emerald-900/30 px-3 py-1 rounded-full cursor-pointer hover:bg-emerald-950/50 transition-colors" onClick={onUptimeClick}>
               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
               <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-400">Live</span>
             </div>
@@ -120,7 +120,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </div>
               <div className="hidden sm:flex flex-col">
                 <span className="text-[11px] font-semibold text-white leading-tight">{user?.name}</span>
-                <span className="text-[9px] text-[#a1a1aa] uppercase tracking-widest leading-tight">{user?.role}</span>
+                <span className="text-[9px] uppercase tracking-widest leading-tight" style={{
+                  color: user?.role === 'ceo' ? '#f91117' : user?.role === 'admin' ? '#d4772c' : '#a1a1aa'
+                }}>
+                  {user?.role === 'ceo' ? '⚡ CEO' : user?.role === 'admin' ? '⚙ Admin' : user?.role ?? 'Usuario'}
+                </span>
               </div>
             </Link>
 
