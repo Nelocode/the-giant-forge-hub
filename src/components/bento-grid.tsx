@@ -1189,6 +1189,19 @@ export function BentoGrid({ session }: { session: Session }) {
             </svg>
             Restablecer
           </button>
+          {/* Tour button — subtle, always available */}
+          <button
+            onClick={() => { localStorage.removeItem('tgf-hub-tour-seen-v1'); setShowTour(true); }}
+            title="Ver tour de introducción"
+            style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9.5, fontWeight: 600, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.18)', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#10b981')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.18)')}
+          >
+            <svg style={{ width: 10, height: 10 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Tour
+          </button>
         </div>
       </div>
 
