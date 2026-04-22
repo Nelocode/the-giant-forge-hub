@@ -1,7 +1,7 @@
 'use client';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ChatPanel — Panel izquierdo: asistente IA conectado a Claude (Anthropic)
+// ChatPanel — Panel izquierdo: asistente IA conectado a Google Gemini
 // Ghostwriting y refinamiento de texto para el CEO
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -79,14 +79,16 @@ export function ChatPanel({ documentContent, onApplySuggestion }: ChatPanelProps
           const { value, done } = await reader.read();
           if (done) break;
           const chunk = decoder.decode(value, { stream: true });
-          // Parse SSE chunks from the Anthropic streaming response
+          // Parse SSE chunks from the Gemini streaming response
           const lines = chunk.split('\n');
           for (const line of lines) {
             if (line.startsWith('data: ')) {
+              const raw = line.slice(6).trim();
+              if (raw === '[DONE]') break;
               try {
-                const data = JSON.parse(line.slice(6));
-                if (data.type === 'content_block_delta' && data.delta?.text) {
-                  full += data.delta.text;
+                const data = JSON.parse(raw);
+                if (data.text) {
+                  full += data.text;
                   setStreaming(full);
                 }
               } catch { /* skip malformed chunks */ }
@@ -109,7 +111,7 @@ export function ChatPanel({ documentContent, onApplySuggestion }: ChatPanelProps
       const errorMsg: ChatMessage = {
         id: `e-${Date.now()}`,
         role: 'assistant',
-        content: `⚠ Error: ${err instanceof Error ? err.message : 'No se pudo conectar con el asistente. Verifica la ANTHROPIC_API_KEY.'}`,
+        content: `⚠ Error: ${err instanceof Error ? err.message : 'No se pudo conectar con el asistente. Verifica la GOOGLE_AI_API_KEY.'}`,
         timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -161,7 +163,7 @@ export function ChatPanel({ documentContent, onApplySuggestion }: ChatPanelProps
             Asistente IA
           </p>
           <p style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>
-            Claude Ghostwriter
+            Gemini Ghostwriter
           </p>
         </div>
         {/* Connection status */}
@@ -433,7 +435,7 @@ export function ChatPanel({ documentContent, onApplySuggestion }: ChatPanelProps
           </button>
         </div>
         <p style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.2)', marginTop: 5, textAlign: 'center' }}>
-          Powered by Claude · Shift+Enter para nueva línea
+          Powered by Gemini · Shift+Enter para nueva línea
         </p>
       </div>
 
