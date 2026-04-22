@@ -1,7 +1,7 @@
 'use client';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BiblePanel — Biblioteca de documentos del CEO
+// BiblePanel — CEO's Playbook document library
 // El equipo puede leer; solo el CEO puede crear/editar/publicar
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -97,7 +97,7 @@ export function BiblePanel({ role, onOpenDocument, onNewDocument }: BiblePanelPr
               Executive Sync Engine
             </p>
             <h2 style={{ fontSize: 15, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
-              Biblia del Equipo
+              Team Playbook
             </h2>
           </div>
           {isCEO && (
@@ -150,7 +150,7 @@ export function BiblePanel({ role, onOpenDocument, onNewDocument }: BiblePanelPr
           <div style={{ textAlign: 'center', padding: '48px 20px' }}>
             <p style={{ fontSize: 32, marginBottom: 12 }}>📄</p>
             <p style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.3)', marginBottom: 6 }}>
-              {search ? 'Sin resultados' : isCEO ? 'La Biblia está vacía' : 'No hay documentos publicados aún'}
+              {search ? 'Sin resultados' : isCEO ? 'The Playbook is empty' : 'No published documents yet'}
             </p>
             {isCEO && !search && (
               <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)' }}>

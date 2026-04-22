@@ -168,7 +168,7 @@ export function ExecutiveSyncLayout({ session, onClose }: ExecutiveSyncLayoutPro
             </button>
           )}
           <button onClick={() => { setActiveTab('bible'); setOpenDoc(null); }} style={{ padding: '5px 14px', borderRadius: 7, fontSize: 10.5, fontWeight: 700, cursor: 'pointer', border: 'none', background: activeTab === 'bible' ? (isCEO ? 'rgba(255,255,255,0.1)' : accent) : 'transparent', color: activeTab === 'bible' ? '#fff' : 'rgba(255,255,255,0.4)', transition: 'all 0.2s' }}>
-            📚 Biblia
+            📋 Playbook
           </button>
         </div>
 

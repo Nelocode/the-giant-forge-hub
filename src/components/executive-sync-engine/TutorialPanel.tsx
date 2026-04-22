@@ -34,8 +34,8 @@ const STEPS_CEO: Step[] = [
   },
   {
     icon: '📡',
-    title: 'Publica a la Biblia del equipo',
-    description: 'Cuando un documento esté listo, presiona "Publicar". El equipo recibirá una notificación instantánea y podrá leerlo desde su propio Hub.',
+    title: 'Publish to the Team Playbook',
+    description: 'When a document is ready, hit "Publish". The team gets an instant notification and can read it from their own Hub.',
   },
   {
     icon: '🔒',
@@ -47,8 +47,8 @@ const STEPS_CEO: Step[] = [
 const STEPS_TEAM: Step[] = [
   {
     icon: '📚',
-    title: 'La Biblia del equipo',
-    description: 'Aquí encontrarás las directrices, estrategia y documentos oficiales publicados por Ian Harris. Se actualizan en tiempo real cuando el CEO publica cambios.',
+    title: 'The Team Playbook',
+    description: 'Here you\'ll find the strategic guidelines, protocols and official documents published by Ian Harris. They update in real time whenever the CEO publishes changes.',
   },
   {
     icon: '🔔',

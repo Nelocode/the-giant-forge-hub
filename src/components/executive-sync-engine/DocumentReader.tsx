@@ -124,7 +124,7 @@ export function DocumentReader({
               color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 600, cursor: 'pointer',
             }}
           >
-            ← Biblia
+            ← Playbook
           </button>
 
           <div style={{ flex: 1, minWidth: 0 }}>

@@ -65,7 +65,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     targetSelector: '[data-tour="card-executive-sync"]',
     title: 'Executive Sync Engine',
-    description: 'El CEO publica documentos estratégicos aquí. El equipo recibe notificaciones en tiempo real y puede leer la "Biblia" del equipo con asistencia de IA.',
+    description: 'The CEO publishes strategic documents here. The team gets real-time notifications and can read the Team Playbook with their own AI assistant.',
     placement: 'top',
     icon: '✍',
     accent: '#d4772c',
