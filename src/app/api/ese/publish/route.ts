@@ -33,8 +33,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'slug is required' }, { status: 422 });
   }
 
-  // 1. Publish in DB
-  const doc = publishEseDocument(body.slug);
+  // 1. Publish in DB (saves version snapshot automatically)
+  const doc = publishEseDocument(body.slug, user.name ?? 'Ian Harris');
   if (!doc) {
     return NextResponse.json({ error: 'Documento no encontrado.' }, { status: 404 });
   }

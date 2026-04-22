@@ -80,7 +80,7 @@ function initSchema(db: Database.Database) {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
-    -- ── Executive Sync Engine — Biblia del equipo ─────────────────────────────
+    -- ── Executive Sync Engine — Playbook ───────────────────────────────────────
     CREATE TABLE IF NOT EXISTS ese_documents (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
       slug       TEXT    NOT NULL UNIQUE,
@@ -88,9 +88,23 @@ function initSchema(db: Database.Database) {
       content    TEXT    NOT NULL DEFAULT '',
       version    INTEGER NOT NULL DEFAULT 1,
       published  INTEGER NOT NULL DEFAULT 0,
+      pinned     INTEGER NOT NULL DEFAULT 0,
+      tags       TEXT    NOT NULL DEFAULT '[]',
+      summary    TEXT,
       author_id  INTEGER REFERENCES users(id) ON DELETE SET NULL,
       created_at TEXT    NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS ese_document_versions (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      doc_slug       TEXT    NOT NULL REFERENCES ese_documents(slug) ON DELETE CASCADE,
+      version        INTEGER NOT NULL,
+      title          TEXT    NOT NULL,
+      content        TEXT    NOT NULL,
+      change_summary TEXT,
+      author_name    TEXT,
+      created_at     TEXT    NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS ese_notifications (
@@ -100,7 +114,28 @@ function initSchema(db: Database.Database) {
       message     TEXT    NOT NULL,
       created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
     );
+
+    -- ── Copper price cache (refreshed every 5 min) ──────────────────────
+    CREATE TABLE IF NOT EXISTS copper_price_cache (
+      id           INTEGER PRIMARY KEY CHECK (id = 1),
+      price_usd_lb REAL,
+      price_usd_t  REAL,
+      change_pct   REAL,
+      sparkline    TEXT DEFAULT '[]',
+      source       TEXT,
+      fetched_at   TEXT
+    );
   `);
+
+  // ── Safe migrations for existing DBs (columns may already exist) ──
+  const migrations = [
+    `ALTER TABLE ese_documents ADD COLUMN pinned  INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE ese_documents ADD COLUMN tags    TEXT NOT NULL DEFAULT '[]'`,
+    `ALTER TABLE ese_documents ADD COLUMN summary TEXT`,
+  ];
+  for (const sql of migrations) {
+    try { db.exec(sql); } catch { /* column already exists */ }
+  }
 
   // Seed default admins if no users exist
   const count = db.prepare('SELECT COUNT(*) as cnt FROM users').get() as { cnt: number };
@@ -288,20 +323,34 @@ export interface EseDocument {
   content: string;
   version: number;
   published: number;
+  pinned: number;
+  tags: string;         // JSON array string e.g. '["estrategia","Q2"]'
+  summary: string | null;
   author_id: number | null;
   author_name?: string;
   created_at: string;
   updated_at: string;
 }
 
+export interface EseDocumentVersion {
+  id: number;
+  doc_slug: string;
+  version: number;
+  title: string;
+  content: string;
+  change_summary: string | null;
+  author_name: string | null;
+  created_at: string;
+}
+
 export function getEseDocuments(publishedOnly = true): EseDocument[] {
   const query = publishedOnly
     ? `SELECT d.*, u.name as author_name FROM ese_documents d
        LEFT JOIN users u ON u.id = d.author_id
-       WHERE d.published = 1 ORDER BY d.updated_at DESC`
+       WHERE d.published = 1 ORDER BY d.pinned DESC, d.updated_at DESC`
     : `SELECT d.*, u.name as author_name FROM ese_documents d
        LEFT JOIN users u ON u.id = d.author_id
-       ORDER BY d.updated_at DESC`;
+       ORDER BY d.pinned DESC, d.updated_at DESC`;
   return getDb().prepare(query).all() as EseDocument[];
 }
 
@@ -322,13 +371,15 @@ export function createEseDocument(data: {
 }
 
 export function updateEseDocument(slug: string, fields: {
-  title?: string; content?: string; published?: number;
+  title?: string; content?: string; published?: number; tags?: string; summary?: string;
 }) {
   const sets: string[] = ['updated_at = datetime("now")', 'version = version + 1'];
   const vals: any[]   = [];
   if (fields.title     !== undefined) { sets.push('title = ?');     vals.push(fields.title); }
   if (fields.content   !== undefined) { sets.push('content = ?');   vals.push(fields.content); }
   if (fields.published !== undefined) { sets.push('published = ?'); vals.push(fields.published); }
+  if (fields.tags      !== undefined) { sets.push('tags = ?');      vals.push(fields.tags); }
+  if (fields.summary   !== undefined) { sets.push('summary = ?');   vals.push(fields.summary); }
   vals.push(slug);
   getDb().prepare(`UPDATE ese_documents SET ${sets.join(', ')} WHERE slug = ?`).run(...vals);
 }
@@ -337,11 +388,41 @@ export function deleteEseDocument(slug: string) {
   getDb().prepare('DELETE FROM ese_documents WHERE slug = ?').run(slug);
 }
 
-export function publishEseDocument(slug: string): EseDocument | undefined {
+export function publishEseDocument(slug: string, authorName?: string): EseDocument | undefined {
+  // 1. Save current version to changelog before incrementing
+  const current = getEseDocumentBySlug(slug);
+  if (current) {
+    getDb().prepare(
+      `INSERT INTO ese_document_versions (doc_slug, version, title, content, change_summary, author_name)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(
+      slug,
+      current.version,
+      current.title,
+      current.content,
+      `Updated to v${current.version + 1}`,
+      authorName ?? 'Ian Harris'
+    );
+  }
+  // 2. Publish
   getDb().prepare(
     `UPDATE ese_documents SET published = 1, updated_at = datetime('now'), version = version + 1 WHERE slug = ?`
   ).run(slug);
   return getEseDocumentBySlug(slug);
+}
+
+export function toggleEseDocumentPin(slug: string): number {
+  const doc = getEseDocumentBySlug(slug);
+  if (!doc) return 0;
+  const newPinned = doc.pinned ? 0 : 1;
+  getDb().prepare(`UPDATE ese_documents SET pinned = ? WHERE slug = ?`).run(newPinned, slug);
+  return newPinned;
+}
+
+export function getEseDocumentVersions(slug: string): EseDocumentVersion[] {
+  return getDb().prepare(
+    `SELECT * FROM ese_document_versions WHERE doc_slug = ? ORDER BY created_at DESC LIMIT 20`
+  ).all(slug) as EseDocumentVersion[];
 }
 
 /* ── ESE Notifications ───────────────────────────────────── */
@@ -364,4 +445,37 @@ export function getRecentEseNotifications(limit = 20): EseNotification[] {
   return getDb().prepare(
     `SELECT * FROM ese_notifications ORDER BY created_at DESC LIMIT ?`
   ).all(limit) as EseNotification[];
+}
+
+/* ── Copper Price Cache ───────────────────────────────────── */
+export interface CopperPriceData {
+  price_usd_lb: number;
+  price_usd_t:  number;
+  change_pct:   number;
+  sparkline:    number[];
+  source:       string;
+  fetched_at:   string;
+}
+
+export function getCachedCopperPrice(): CopperPriceData | null {
+  const row = getDb().prepare(`SELECT * FROM copper_price_cache WHERE id = 1`).get() as any;
+  if (!row) return null;
+  return { ...row, sparkline: JSON.parse(row.sparkline ?? '[]') };
+}
+
+export function setCopperPriceCache(data: Omit<CopperPriceData, 'sparkline'> & { sparkline: number[] }) {
+  getDb().prepare(`
+    INSERT INTO copper_price_cache (id, price_usd_lb, price_usd_t, change_pct, sparkline, source, fetched_at)
+    VALUES (1, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      price_usd_lb = excluded.price_usd_lb,
+      price_usd_t  = excluded.price_usd_t,
+      change_pct   = excluded.change_pct,
+      sparkline    = excluded.sparkline,
+      source       = excluded.source,
+      fetched_at   = excluded.fetched_at
+  `).run(
+    data.price_usd_lb, data.price_usd_t, data.change_pct,
+    JSON.stringify(data.sparkline), data.source, data.fetched_at
+  );
 }

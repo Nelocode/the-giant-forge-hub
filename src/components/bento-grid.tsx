@@ -19,6 +19,7 @@ import { useEasterEggs, CopperRushOverlay, EggToast } from './easter-eggs';
 import { EventChecklistCard } from './event-checklist-card';
 import { ExecutiveSyncCard } from './executive-sync-engine';
 import { HubTour, hasHubTourBeenSeen } from './hub-tour';
+import { CopperPriceCard } from './copper-price-card';
 
 /* ── Tool definitions ─────────────────────────────────────── */
 interface Tool {
@@ -96,6 +97,7 @@ const DEFAULT_LAYOUT = [
   { i: 'activity',         x:0,  y:10, w:9, h:7,  minW:4, minH:6 },
   { i: 'event-checklist',  x:9,  y:10, w:3, h:14, minW:3, minH:10 },
   { i: 'executive-sync',   x:0,  y:24, w:4, h:9,  minW:3, minH:7  },
+  { i: 'copper-price',     x:4,  y:24, w:3, h:9,  minW:2, minH:7  },
 ];
 
 /* ── Bento catalog (for toggle panel) ─────────────────────── */
@@ -108,10 +110,11 @@ const BENTO_CATALOG = [
   { id: 'activity',        label: 'Estado del Sistema',   icon: '🔧' },
   { id: 'event-checklist', label: 'Checklist de Eventos', icon: '✅' },
   { id: 'executive-sync',  label: 'Executive Sync',       icon: '✍' },
+  { id: 'copper-price',    label: 'Precio del Cobre',     icon: '🟠' },
 ] as const;
 
 const ALL_IDS = BENTO_CATALOG.map(b => b.id) as string[];
-const VISIBILITY_KEY = 'tgf-bento-visibility-v2'; // bump to reset defaults
+const VISIBILITY_KEY = 'tgf-bento-visibility-v3'; // bump: copper-price added
 
 const LAYOUT_KEY = 'tgf-hub-layout-v11';
 
@@ -1141,6 +1144,7 @@ export function BentoGrid({ session }: { session: Session }) {
     'activity':        <ActivityCard onUptimeClick={eggs.onUptimeClick} />,
     'event-checklist': <EventChecklistCard />,
     'executive-sync':   <ExecutiveSyncCard session={session} />,
+    'copper-price':     <CopperPriceCard />,
   };
 
   const visibleLayout = layout.filter(item => visible.has(item.i));
