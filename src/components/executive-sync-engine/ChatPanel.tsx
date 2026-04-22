@@ -7,10 +7,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChatMessage } from './types';
+import type { ApiConfig } from './SettingsPanel';
 
 interface ChatPanelProps {
   documentContent: string;
   onApplySuggestion: (text: string) => void;
+  apiConfig?: ApiConfig;
 }
 
 /* ── Minimal Markdown renderer for chat bubbles ───────────────── */
@@ -22,11 +24,12 @@ function renderChatMd(text: string): string {
     .replace(/\n/g, '<br/>');
 }
 
-export function ChatPanel({ documentContent, onApplySuggestion }: ChatPanelProps) {
+export function ChatPanel({ documentContent, onApplySuggestion, apiConfig }: ChatPanelProps) {
   const [messages,  setMessages]  = useState<ChatMessage[]>([]);
   const [input,     setInput]     = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [streaming, setStreaming] = useState('');
+  const [lastProvider, setLastProvider] = useState<'claude' | 'gemini' | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -59,8 +62,11 @@ export function ChatPanel({ documentContent, onApplySuggestion }: ChatPanelProps
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: trimmed,
-          documentContext: documentContent.slice(0, 4000), // send relevant context
-          history: messages.slice(-6), // last 3 exchanges
+          documentContext: documentContent.slice(0, 4000),
+          history: messages.slice(-6),
+          claudeKey:         apiConfig?.claudeKey,
+          googleKey:         apiConfig?.googleKey,
+          preferredProvider: apiConfig?.preferredProvider ?? 'auto',
         }),
       });
 
@@ -90,6 +96,7 @@ export function ChatPanel({ documentContent, onApplySuggestion }: ChatPanelProps
                 if (data.text) {
                   full += data.text;
                   setStreaming(full);
+                  if (data.provider && !lastProvider) setLastProvider(data.provider);
                 }
               } catch { /* skip malformed chunks */ }
             }
@@ -163,23 +170,24 @@ export function ChatPanel({ documentContent, onApplySuggestion }: ChatPanelProps
             Asistente IA
           </p>
           <p style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>
-            Gemini Ghostwriter
+            {lastProvider === 'claude' ? 'Claude Ghostwriter' : lastProvider === 'gemini' ? 'Gemini Ghostwriter' : 'IA Ghostwriter'}
           </p>
         </div>
         {/* Connection status */}
         <div style={{
           marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
           padding: '3px 9px', borderRadius: 100,
-          background: 'rgba(16,185,129,0.08)',
-          border: '1px solid rgba(16,185,129,0.18)',
+          background: lastProvider === 'claude' ? 'rgba(249,17,23,0.08)' : 'rgba(16,185,129,0.08)',
+          border: `1px solid ${lastProvider === 'claude' ? 'rgba(249,17,23,0.18)' : 'rgba(16,185,129,0.18)'}`,
         }}>
           <span style={{
             width: 5, height: 5, borderRadius: '50%',
-            background: '#10b981', boxShadow: '0 0 4px #10b981',
+            background: lastProvider === 'claude' ? '#f91117' : '#10b981',
+            boxShadow: `0 0 4px ${lastProvider === 'claude' ? '#f91117' : '#10b981'}`,
             animation: 'pulse-status 2s infinite', display: 'inline-block',
           }}/>
-          <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#10b981' }}>
-            Conectado
+          <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: lastProvider === 'claude' ? '#f91117' : '#10b981' }}>
+            {lastProvider ? (lastProvider === 'claude' ? 'Claude' : 'Gemini') : 'Listo'}
           </span>
         </div>
       </div>

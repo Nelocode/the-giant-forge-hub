@@ -15,3 +15,5 @@ export { MarkdownImporter } from './MarkdownImporter';
 export { useSyncEmitter } from './hooks/useSyncEmitter';
 export { useSyncReceiver } from './hooks/useSyncReceiver';
 export type { SyncDocument, SyncEvent, ChatMessage, ImportedFile } from './types';
+export { SettingsPanel, loadApiConfig, saveApiConfig } from './SettingsPanel';
+export type { ApiConfig } from './SettingsPanel';

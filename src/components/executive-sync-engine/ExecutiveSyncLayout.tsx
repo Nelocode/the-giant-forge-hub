@@ -10,6 +10,8 @@ import { useCallback, useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChatPanel } from './ChatPanel';
 import { DocumentPanel } from './DocumentPanel';
+import { SettingsPanel, loadApiConfig } from './SettingsPanel';
+import type { ApiConfig } from './SettingsPanel';
 import { useSyncEmitter } from './hooks/useSyncEmitter';
 import type { Session } from 'next-auth';
 
@@ -23,11 +25,13 @@ export function ExecutiveSyncLayout({ session, onClose }: ExecutiveSyncLayoutPro
   const isEditor = user.role === 'admin' || user.role === 'ceo'; // CEO or admin can edit
 
   const docId = useId().replace(/:/g, '');
-  const [title,   setTitle]   = useState('');
-  const [content, setContent] = useState('');
-  const [chatWidth, setChatWidth] = useState(380); // px, resizable
-  const [isResizing, setIsResizing] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [title,        setTitle]        = useState('');
+  const [content,      setContent]      = useState('');
+  const [chatWidth,    setChatWidth]    = useState(380);
+  const [isResizing,   setIsResizing]   = useState(false);
+  const [mounted,      setMounted]      = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiConfig,    setApiConfig]    = useState<ApiConfig>(() => loadApiConfig());
 
   const { isBroadcasting, lastBroadcast, broadcast } = useSyncEmitter(
     user.id ?? 'ceo',
@@ -209,6 +213,22 @@ export function ExecutiveSyncLayout({ session, onClose }: ExecutiveSyncLayoutPro
           </button>
         )}
 
+        {/* ⚙ Settings button */}
+        <button
+          onClick={() => setShowSettings(true)}
+          title="Configurar API Keys"
+          style={{
+            width: 30, height: 30, borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'transparent',
+            border: `1px solid ${(apiConfig.claudeKey || apiConfig.googleKey) ? 'rgba(16,185,129,0.3)' : 'rgba(212,119,44,0.4)'}`,
+            color: (apiConfig.claudeKey || apiConfig.googleKey) ? '#10b981' : '#d4772c',
+            fontSize: 14, cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,119,44,0.12)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+        >⚙</button>
+
         {/* Close */}
         <button
           onClick={onClose}
@@ -236,6 +256,7 @@ export function ExecutiveSyncLayout({ session, onClose }: ExecutiveSyncLayoutPro
           <ChatPanel
             documentContent={content}
             onApplySuggestion={handleApplySuggestion}
+            apiConfig={apiConfig}
           />
         </div>
 
@@ -281,5 +302,17 @@ export function ExecutiveSyncLayout({ session, onClose }: ExecutiveSyncLayoutPro
     </div>
   );
 
-  return createPortal(modal, document.body);
+  return (
+    <>
+      {createPortal(modal, document.body)}
+      {showSettings && (
+        <SettingsPanel
+          onClose={() => {
+            setShowSettings(false);
+            setApiConfig(loadApiConfig()); // refresh config after save
+          }}
+        />
+      )}
+    </>
+  );
 }
