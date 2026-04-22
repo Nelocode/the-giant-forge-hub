@@ -3,14 +3,13 @@
 // DELETE /api/ese/documents/[slug] — Elimina (solo CEO)
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { getEseDocumentBySlug, updateEseDocument, deleteEseDocument } from '@/lib/db';
 
 interface Params { params: { slug: string } }
 
 export async function GET(_req: NextRequest, { params }: Params) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const doc = getEseDocumentBySlug(params.slug);
@@ -26,7 +25,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const user = session?.user as { role?: string } | undefined;
 
   if (!session || user?.role !== 'ceo') {
@@ -45,7 +44,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const user = session?.user as { role?: string } | undefined;
 
   if (!session || user?.role !== 'ceo') {

@@ -4,8 +4,7 @@
 // 3. Hace broadcast SSE a todos los suscriptores activos
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { publishEseDocument, createEseNotification } from '@/lib/db';
 
 // Shared SSE subscriber registry (same as /api/sync/stream)
@@ -22,7 +21,7 @@ function getSubscribers(): Set<ReadableStreamDefaultController> {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const user = session?.user as { role?: string; name?: string } | undefined;
 
   if (!session || user?.role !== 'ceo') {
