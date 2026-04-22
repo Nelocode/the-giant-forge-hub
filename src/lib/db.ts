@@ -114,7 +114,7 @@ function initSchema(db: Database.Database) {
       .run('Nelson Carvajal', 'nelsondcarvajal@gmail.com', hash2, 'admin');
 
     // CEO — Ian Harris (Copper Giant)
-    const hash3 = bcrypt.hashSync('CopperCEO#2025', 12);
+    const hash3 = bcrypt.hashSync('Copper.2026', 12);
     db.prepare(`INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`)
       .run('Ian Harris', 'ian.harris@coppergiant.com', hash3, 'ceo');
 
