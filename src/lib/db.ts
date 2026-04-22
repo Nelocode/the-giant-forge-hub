@@ -79,6 +79,27 @@ function initSchema(db: Database.Database) {
       ai_note    TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    -- ── Executive Sync Engine — Biblia del equipo ─────────────────────────────
+    CREATE TABLE IF NOT EXISTS ese_documents (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug       TEXT    NOT NULL UNIQUE,
+      title      TEXT    NOT NULL,
+      content    TEXT    NOT NULL DEFAULT '',
+      version    INTEGER NOT NULL DEFAULT 1,
+      published  INTEGER NOT NULL DEFAULT 0,
+      author_id  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS ese_notifications (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      document_id INTEGER NOT NULL REFERENCES ese_documents(id) ON DELETE CASCADE,
+      title       TEXT    NOT NULL,
+      message     TEXT    NOT NULL,
+      created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   // Seed default admins if no users exist
@@ -92,7 +113,13 @@ function initSchema(db: Database.Database) {
     db.prepare(`INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`)
       .run('Nelson Carvajal', 'nelsondcarvajal@gmail.com', hash2, 'admin');
 
+    // CEO — Ian Harris (Copper Giant)
+    const hash3 = bcrypt.hashSync('CopperCEO#2025', 12);
+    db.prepare(`INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`)
+      .run('Ian Harris', 'ian.harris@coppergiant.com', hash3, 'ceo');
+
     console.log('[DB] Seed admins created: admin@forge.local / admin123 | nelsondcarvajal@gmail.com');
+    console.log('[DB] CEO created: ian.harris@coppergiant.com / CopperCEO#2025');
   }
 }
 
@@ -114,7 +141,7 @@ export function getUserByEmail(email: string) {
   ).get(email) as { id: number; name: string; email: string; password: string; role: string; avatar: string | null } | undefined;
 }
 
-export function createUser(name: string, email: string, password: string, role: 'admin' | 'user' = 'user') {
+export function createUser(name: string, email: string, password: string, role: 'admin' | 'ceo' | 'user' = 'user') {
   const hash = bcrypt.hashSync(password, 12);
   const result = getDb().prepare(
     'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)'
@@ -251,4 +278,90 @@ export function updateChecklistItem(id: number, fields: { done?: number; ai_note
 
 export function deleteChecklistItem(id: number) {
   getDb().prepare('DELETE FROM checklist_items WHERE id = ?').run(id);
+}
+
+/* ── ESE Documents (Biblia del equipo) ───────────────────── */
+export interface EseDocument {
+  id: number;
+  slug: string;
+  title: string;
+  content: string;
+  version: number;
+  published: number;
+  author_id: number | null;
+  author_name?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function getEseDocuments(publishedOnly = true): EseDocument[] {
+  const query = publishedOnly
+    ? `SELECT d.*, u.name as author_name FROM ese_documents d
+       LEFT JOIN users u ON u.id = d.author_id
+       WHERE d.published = 1 ORDER BY d.updated_at DESC`
+    : `SELECT d.*, u.name as author_name FROM ese_documents d
+       LEFT JOIN users u ON u.id = d.author_id
+       ORDER BY d.updated_at DESC`;
+  return getDb().prepare(query).all() as EseDocument[];
+}
+
+export function getEseDocumentBySlug(slug: string): EseDocument | undefined {
+  return getDb().prepare(
+    `SELECT d.*, u.name as author_name FROM ese_documents d
+     LEFT JOIN users u ON u.id = d.author_id WHERE d.slug = ?`
+  ).get(slug) as EseDocument | undefined;
+}
+
+export function createEseDocument(data: {
+  slug: string; title: string; content?: string; authorId?: number;
+}): number {
+  const result = getDb().prepare(
+    `INSERT INTO ese_documents (slug, title, content, author_id) VALUES (?, ?, ?, ?)`
+  ).run(data.slug, data.title, data.content ?? '', data.authorId ?? null);
+  return result.lastInsertRowid as number;
+}
+
+export function updateEseDocument(slug: string, fields: {
+  title?: string; content?: string; published?: number;
+}) {
+  const sets: string[] = ['updated_at = datetime("now")', 'version = version + 1'];
+  const vals: any[]   = [];
+  if (fields.title     !== undefined) { sets.push('title = ?');     vals.push(fields.title); }
+  if (fields.content   !== undefined) { sets.push('content = ?');   vals.push(fields.content); }
+  if (fields.published !== undefined) { sets.push('published = ?'); vals.push(fields.published); }
+  vals.push(slug);
+  getDb().prepare(`UPDATE ese_documents SET ${sets.join(', ')} WHERE slug = ?`).run(...vals);
+}
+
+export function deleteEseDocument(slug: string) {
+  getDb().prepare('DELETE FROM ese_documents WHERE slug = ?').run(slug);
+}
+
+export function publishEseDocument(slug: string): EseDocument | undefined {
+  getDb().prepare(
+    `UPDATE ese_documents SET published = 1, updated_at = datetime('now'), version = version + 1 WHERE slug = ?`
+  ).run(slug);
+  return getEseDocumentBySlug(slug);
+}
+
+/* ── ESE Notifications ───────────────────────────────────── */
+export interface EseNotification {
+  id: number;
+  document_id: number;
+  title: string;
+  message: string;
+  created_at: string;
+}
+
+export function createEseNotification(documentId: number, title: string, message: string): number {
+  const result = getDb().prepare(
+    `INSERT INTO ese_notifications (document_id, title, message) VALUES (?, ?, ?)`
+  ).run(documentId, title, message);
+  return result.lastInsertRowid as number;
+}
+
+export function getRecentEseNotifications(limit = 20): EseNotification[] {
+  return getDb().prepare(
+    `SELECT * FROM ese_notifications ORDER BY created_at DESC LIMIT ?`
+  ).all(limit) as EseNotification[];
 }

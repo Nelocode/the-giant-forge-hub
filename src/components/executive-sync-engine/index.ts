@@ -12,8 +12,13 @@ export { ExecutiveSyncLayout } from './ExecutiveSyncLayout';
 export { DocumentPanel } from './DocumentPanel';
 export { ChatPanel } from './ChatPanel';
 export { MarkdownImporter } from './MarkdownImporter';
+export { BiblePanel } from './BiblePanel';
+export { DocumentReader } from './DocumentReader';
+export { TutorialPanel, hasTutorialBeenSeen, markTutorialSeen } from './TutorialPanel';
+export { NotificationToast, dispatchEseEvent } from './NotificationToast';
 export { useSyncEmitter } from './hooks/useSyncEmitter';
 export { useSyncReceiver } from './hooks/useSyncReceiver';
 export type { SyncDocument, SyncEvent, ChatMessage, ImportedFile } from './types';
 export { SettingsPanel, loadApiConfig, saveApiConfig } from './SettingsPanel';
 export type { ApiConfig } from './SettingsPanel';
+

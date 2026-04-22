@@ -7,17 +7,24 @@
 import { NextRequest } from 'next/server';
 import type { SyncDocument, SyncEvent } from '@/components/executive-sync-engine/types';
 
-// In-memory subscriber registry
-// In production with multiple instances, replace with Redis pub/sub
-const subscribers = new Set<ReadableStreamDefaultController>();
+// In-memory subscriber registry backed by globalThis so that
+// /api/ese/publish can access the same set without circular imports
+declare global {
+  var _eseSubscribers: Set<ReadableStreamDefaultController> | undefined;
+  var _eseLastDocument: SyncDocument | null;
+}
 
-// Singleton document state (last broadcast)
-let lastDocument: SyncDocument | null = null;
+if (!global._eseSubscribers)   global._eseSubscribers  = new Set();
+if (!global._eseLastDocument)  global._eseLastDocument = null;
 
-// Export the subscriber set so /api/sync/broadcast can push to it
-export { subscribers, lastDocument };
+const subscribers = global._eseSubscribers;
+
+export { subscribers };
 export function setLastDocument(doc: SyncDocument) {
-  lastDocument = doc;
+  global._eseLastDocument = doc;
+}
+export function getLastDocument(): SyncDocument | null {
+  return global._eseLastDocument ?? null;
 }
 
 export async function GET(req: NextRequest) {
@@ -30,19 +37,21 @@ export async function GET(req: NextRequest) {
       controller = ctrl;
       subscribers.add(ctrl);
 
+      const lastDoc = getLastDocument();
+
       // Send connection acknowledgement
       const connEvent: SyncEvent = {
         type: 'connected',
-        payload: lastDocument ?? {},
+        payload: lastDoc ?? {},
         timestamp: new Date().toISOString(),
       };
       ctrl.enqueue(`data: ${JSON.stringify(connEvent)}\n\n`);
 
       // If there's a cached document, push it immediately
-      if (lastDocument) {
+      if (lastDoc) {
         const docEvent: SyncEvent = {
           type: 'document_update',
-          payload: lastDocument,
+          payload: lastDoc,
           timestamp: new Date().toISOString(),
         };
         ctrl.enqueue(`data: ${JSON.stringify(docEvent)}\n\n`);
